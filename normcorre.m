@@ -352,16 +352,13 @@ for it = 1:iter
         gz = max(abs(reshape(diff(shifts_up,[],3),[],1)));
         flag_interp = max([gx;gy;gz;0])<0.5;      % detect possible smearing
 
-        if t == 9
-           aa = 123; 
-        end
         if flag_interp    
             Mf = cell2mat_ov_sum(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY,Bs) - add_value;
         else            
             Mf = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY) - add_value;
         end
 
-        Mf(Mf==add_value) = NaN;
+        Mf(Mf==-add_value) = NaN;
         
         if strcmpi(filetype,'mat');
             if nd == 2; M_final(:,:,t) = Mf; end

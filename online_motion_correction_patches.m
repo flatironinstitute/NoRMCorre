@@ -77,6 +77,7 @@ defoptions.make_avi = false;                  % flag for making movie
 defoptions.name = 'motion_corrected.avi';     % name of saved movie
 defoptions.fr = 30;                           % frame rate for saved movie
 defoptions.iter = 1;                          % number of passes over the data
+defoptions.add_value = 0;                     % add value to make dataset non-negative
 %defoptions.write_tiff = false;               % save output as a tiff stack
 %defoptions.out_name = 'motion_corrected.tif'; % name for output file name
 
@@ -101,6 +102,7 @@ if ~isfield(options,'make_avi'); options.make_avi = defoptions.make_avi; end; ma
 if ~isfield(options,'name'); options.name = defoptions.name; end; name = options.name;
 if ~isfield(options,'fr'); options.fr = defoptions.fr; end; fr = options.fr;
 if ~isfield(options,'iter'); options.iter = defoptions.iter; end; iter = options.iter;
+if ~isfield(options,'add_value'); options.add_value = defoptions.add_value; end; add_value = options.add_value;
 %if ~isfield(options,'write_tiff'); options.write_tiff = defoptions.write_tiff; end; write_tiff = options.write_tiff;
 %if ~isfield(options,'out_name'); options.out_name = defoptions.out_name; end; out_name = options.out_name;
 if isscalar(grid_size); grid_size = grid_size*ones(1,nd); end; if length(grid_size) == 2; grid_size(3) = 1; end
@@ -131,7 +133,6 @@ switch filetype
         if nd == 2; Y_temp = double(Y(:,:,1:init_batch)); elseif nd == 3; Y_temp = double(Y(:,:,:,1:init_batch)); end
 end
 
-add_value = max(Y_temp(:));
 if nargin < 3 || isempty(template)
     template_in = median(Y_temp,nd+1)+add_value;
 else
@@ -258,10 +259,12 @@ for it = 1:iter
         shifts_temp = zeros(length(xx_s),length(yy_s),length(zz_s),nd); 
 
         if numel(M_fin) > 1           
-            if nd == 2; out_rig = dftregistration_max(fftTempMat,fftn(Yt),us_fac,max_shift); end
-            if nd == 3; out_rig = dftregistration_max_3d(fftTempMat,fftn(Yt),us_fac,max_shift); end
+            if nd == 2; out_rig = dftregistration_max(fftTempMat,fftn(Yt),us_fac,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
+            if nd == 3; out_rig = dftregistration_max_3d(fftTempMat,fftn(Yt),us_fac,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
         else
-            out_rig = zeros(1,5);
+            lb = -max_shift(1,nd);
+            ub = max_shift(1,nd);
+            max_dev = 0*max_dev;
         end
         if ~use_parallel
             for i = 1:length(xx_s)
@@ -269,10 +272,10 @@ for it = 1:iter
                     for k = 1:length(zz_s)
                         if nd == 2
                             %[output,Greg] = dftregistration_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift);        
-                            [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,out_rig(3:4)-max_dev(1:2),out_rig(3:4)+max_dev(1:2));  
+                            [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2));  
                         elseif nd == 3
                             %[output,Greg] = dftregistration_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift);
-                            [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,out_rig(3:5)-max_dev,out_rig(3:5)+max_dev); 
+                            [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev); 
                             shifts_temp(i,j,k,3) = output(5);
                         end
                         M_temp = abs(ifftn(Greg));
@@ -294,8 +297,8 @@ for it = 1:iter
                 [i,j,k] = ind2sub([length(xx_s),length(yy_s),length(zz_s)],ii)
                 %if nd == 2; [output,Greg] = dftregistration_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift); end
                 %if nd == 3; [output,Greg] = dftregistration_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift); end
-                if nd == 2; [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,out_rig(3:4)-max_dev(1:2),out_rig(3:4)+max_dev(1:2)); end
-                if nd == 3; [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,out_rig(3:5)-max_dev,out_rig(3:5)+max_dev); end                
+                if nd == 2; [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2)); end
+                if nd == 3; [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev); end                
                 M_temp = abs(ifftn(Greg));
                 Mt2{ii} = M_temp;
                 shifts_cell{ii} = output(3:end);
@@ -347,7 +350,8 @@ for it = 1:iter
         else            
             Mf = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY) - add_value;
         end
-        Mf(isnan(Mf)) = 0;
+
+        Mf(Mf==-add_value) = 0;
         
         if strcmpi(filetype,'mat');
             if nd == 2; M_final(:,:,t) = Mf; end

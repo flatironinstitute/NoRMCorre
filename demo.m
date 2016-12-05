@@ -6,16 +6,15 @@ T = size(Y,ndims(Y));
 %% set parameters (first try out rigid motion correction)
 
 options.grid_size = [size(Y,1),size(Y,2)];  % size of patch in each direction
-options.bin_width = 30;                     % number of bins after which you update template
+options.bin_width = 50;                     % number of bins after which you update template
 options.mot_uf = 1;                         % upsampling factor for smaller patches
 options.us_fac = 10;                         % upsampling factor for subpixel registration
 options.method = {'median','mean'};         % averaging method for computing and updating templates
 options.overlap_pre = 16;                   % amount of overlap for each patch
 options.overlap_post = 16;                  % amount of overlap for each patch
-options.iter = 2;                           % number of passes (set to 1 for one-pass online processing)
+options.iter = 1;                           % number of passes (set to 1 for one-pass online processing)
 options.plot_flag = false;                  % flag for plotting results while correcting
 options.memmap = false;                     % save output in a .mat file
-options.iter = 1;
 options.max_shift = 15;
 
 %% perform motion correction
@@ -37,7 +36,6 @@ mmY = quantile(Y(:),0.995);
 [cY,mY,vY] = motion_metrics(Y,10);
 [cM1,mM1,vM1] = motion_metrics(M1,10);
 [cM2,mM2,vM2] = motion_metrics(M2,10);
-
 T = length(cY);
 %% plot metrics
 figure;
