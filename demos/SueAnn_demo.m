@@ -1,5 +1,6 @@
 clear;
 name = '/Users/epnevmatikakis/Documents/Ca_datasets/Sueann/k56_20160608_RSM_125um_41mW_zoom2p2_00001_00034.tif';
+addpath(genpath('../../NoRMCorre'));
 tiffInfo = imfinfo(name);
 T = length(tiffInfo);
 Y1 = imread(name,'Index',1,'Info',tiffInfo);
@@ -10,6 +11,7 @@ for t = 2:T
     Y(:,:,t) = double(imread(name,'Index',t,'Info',tiffInfo));
 end
 toc
+%Y = Y - min(Y(:));
 %% set parameters (first try out rigid motion correction)
 
 options.grid_size = [size(Y,1),size(Y,2)];  % size of patch in each direction
@@ -26,32 +28,33 @@ options.max_shift = 15;
 
 %% perform motion correction
 %profile on
-tic; [M1,shifts1,template1] = online_motion_correction_patches(Y,options); toc
+tic; [M1,shifts1,template1] = normcorre(Y,options); toc
 %profile off
 %profile viewer
 
 %% now try non-rigid
-options.grid_size = [128,128];                % size of patch in each direction
+options.grid_size = [128,128];              % size of patch in each direction
 options.mot_uf = 4;                         % further upsample by a given factor
 options.plot_flag = false;                  % flag for plotting results while correcting
 options.make_avi = false;
 options.name = 'sueann_motion_corrected.avi';
 options.fr = 30;
 
-tic; [M2,shifts2,template2] = online_motion_correction_patches(Y,options); toc
+tic; [M2,shifts2,template2] = normcorre(Y,options); toc
 
 % These results are with only one pass of the data completely online. In
 % practice we can improve if we do multiple passes (with options.iter > 1)
 % or do fancy things like, first correct with rigid which is more robust to
 % large perturbation, then refine by correcting with non-rigid
+
 %% plot data
 
 nnY = quantile(Y(:),0.005);
 mmY = quantile(Y(:),0.995);
 
-[cY,mY,vY] = motion_metrics(Y,15);
-[cM1,mM1,vM1] = motion_metrics(M1,15);
-[cM2,mM2,vM2] = motion_metrics(M2,15);
+[cY,mY,vY] = motion_metrics(Y,options.max_shift);
+[cM1,mM1,vM1] = motion_metrics(M1,options.max_shift);
+[cM2,mM2,vM2] = motion_metrics(M2,options.max_shift);
 
 T = length(cY);
 %% plot metrics
@@ -85,15 +88,24 @@ figure;
     ax3 = subplot(313); plot(shifts_y); hold on; plot(shifts_r(:,2),'--k','linewidth',2); title('displacements along y','fontsize',14,'fontweight','bold')
             xlabel('timestep','fontsize',14,'fontweight','bold')
     linkaxes([ax1,ax2,ax3],'x')
-%% display movies
 
+%% display downsampled data
+
+tsub = 5;
+
+Y_ds = downsample_data(Y,'time',tsub);
+M_ds = downsample_data(M2,'time',tsub);
+nnY = quantile(Y_ds(:),0.005);
+mmY = quantile(Y_ds(:),0.99);
+%%
 figure;
-for t = 1:1:T
-    subplot(121);imagesc(Y(:,:,t),[nnY,mmY]); xlabel('non-rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
-    title(sprintf('Frame %i out of %i',t,T),'fontweight','bold','fontsize',14); colormap('bone')
-    subplot(122);imagesc(M1(:,:,t),[nnY,mmY]); xlabel('non-rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
+for t = 1:1:size(Y_ds,3)
+    subplot(121);imagesc(Y_ds(:,:,t),[nnY,mmY]); xlabel('Raw data (downsampled)','fontsize',14,'fontweight','bold'); axis equal; axis tight;
+    title(sprintf('Frame %i out of %i',t,T),'fontweight','bold','fontsize',14); colormap('bone');
+    set(gca,'XTick',[],'YTick',[]);
+    subplot(122);imagesc(M_ds(:,:,t),[nnY,mmY]); xlabel('non-rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
     title(sprintf('Frame %i out of %i',t,T),'fontweight','bold','fontsize',14); colormap('bone')
     set(gca,'XTick',[],'YTick',[]);
     drawnow;
-    pause(0.01);
+    pause(0.001);
 end
