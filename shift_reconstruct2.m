@@ -38,7 +38,7 @@ if any(shifts)
         Greg = buf2ft;
     end
     Greg = Greg*exp(1i*diffphase);
-    I = abs(ifftn(Greg));
+    I = real(ifftn(Greg));
     I = remove_boundaries(I,shifts,method,add_value);
 else
     I = Y;

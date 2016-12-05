@@ -278,7 +278,7 @@ for it = 1:iter
                             [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev); 
                             shifts_temp(i,j,k,3) = output(5);
                         end
-                        M_temp = abs(ifftn(Greg));
+                        M_temp = real(ifftn(Greg));
                         M_temp = remove_boundaries(M_temp,output(3:end),'none',template{i,j,k});
                         if nd == 2; buffer{i,j,k}(:,:,ind) = M_temp;  end    
                         if nd == 3; buffer{i,j,k}(:,:,:,ind) = M_temp;  end 
@@ -301,7 +301,7 @@ for it = 1:iter
                 %if nd == 3; [output,Greg] = dftregistration_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift); end
                 if nd == 2; [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2)); end
                 if nd == 3; [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev); end                
-                M_temp = abs(ifftn(Greg));
+                M_temp = real(ifftn(Greg));
                 Mt2{ii} = M_temp;
                 shifts_cell{ii} = output(3:end);
                 diff_cell{ii} = output(2);
