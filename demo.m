@@ -18,13 +18,13 @@ options.memmap = false;                     % save output in a .mat file
 options.max_shift = 15;
 
 %% perform motion correction
-tic; [M1,shifts1,template1] = online_motion_correction_patches(Y,options); toc
+tic; [M1,shifts1,template1] = normcorre(Y,options); toc
 
 %% now try non-rigid motion correction
 options.grid_size = [32,32];                % size of patch in each direction
 options.mot_uf = 4;                         % further upsample by a given factor
 options.max_dev = 2;
-tic; [M2,shifts2,template2] = online_motion_correction_patches(Y,options); toc
+tic; [M2,shifts2,template2] = normcorre(Y,options); toc
 
 % These results are with only one pass of the data completely online. In
 % practice we can improve if we do multiple passes (with options.iter > 1)
