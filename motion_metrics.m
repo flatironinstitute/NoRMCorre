@@ -46,16 +46,16 @@ if memmap
 else
     Y = single(Y);
     nd = ndims(Y)-1;
-    mY = mean(Y,nd+1);
+    mY = nanmean(Y,nd+1);
     if nd == 2
         Yr = Y(bnd(1)+1:sizY(1)-bnd(2),bnd(3)+1:sizY(2)-bnd(4),:);
-        mYr = mean(Yr,nd+1); %mY(bnd(1)+1:sizY(1)-bnd(2),bnd(3)+1:sizY(2)-bnd(4));
+        mYr = mY(bnd(1)+1:sizY(1)-bnd(2),bnd(3)+1:sizY(2)-bnd(4));
     else
         Yr = Y(bnd(1)+1:sizY(1)-bnd(2),bnd(3)+1:sizY(2)-bnd(4),bnd(5)+1:sizY(3)-bnd(6),:);
         mYr = mY(bnd(1)+1:sizY(1)-bnd(2),bnd(3)+1:sizY(2)-bnd(4),bnd(5)+1:sizY(3)-bnd(6));
     end
     cY = corr(reshape(Yr,[],T),reshape(mYr,[],1));
-    if nargout == 3; vY = var(Y,[],nd+1)*(T-1); end
+    if nargout == 3; vY = nanvar(Y,[],nd+1)*(T-1); end
 end
     
 if nargout == 3; vY = vY/T; end
