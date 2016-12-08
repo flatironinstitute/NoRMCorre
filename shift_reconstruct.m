@@ -37,7 +37,7 @@ if any(shifts)
         Greg = buf2ft;
     end
 
-    I = abs(ifftn(Greg));
+    I = real(ifftn(Greg));
     I = remove_boundaries(I,shifts,method,add_value);
 else
     I = Y;
