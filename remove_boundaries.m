@@ -8,6 +8,12 @@ shifts = round(shifts);
 sz = size(I);
 nd = ndims(I);
 X = I;
+
+if strcmpi(method,'nan');
+    method = 'zero';
+    add_value = NaN;
+end
+
 switch method
     case 'zero'
         if shifts(1); X((1:abs(shifts(1)))*sign(shifts(1)) + (sz(1)+1)*(shifts(1)<0),:,:) = add_value; end

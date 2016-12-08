@@ -53,8 +53,14 @@ else
     else
         Yr = Y(bnd(1)+1:sizY(1)-bnd(2),bnd(3)+1:sizY(2)-bnd(4),bnd(5)+1:sizY(3)-bnd(6),:);
         mYr = mY(bnd(1)+1:sizY(1)-bnd(2),bnd(3)+1:sizY(2)-bnd(4),bnd(5)+1:sizY(3)-bnd(6));
+    end    
+    Yr = reshape(Yr,[],T);
+    mYr = mYr(:);
+    if any(any(isnan(Yr))) || any(isnan(mYr));
+        cY = corr(Yr,mYr,'rows','p');
+    else
+        cY = corr(Yr,mYr);
     end
-    cY = corr(reshape(Yr,[],T),reshape(mYr,[],1));
     if nargout == 3; vY = nanvar(Y,[],nd+1)*(T-1); end
 end
     

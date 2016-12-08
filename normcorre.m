@@ -252,6 +252,8 @@ for it = 1:iter
                 if nd == 2; Yt = double(Y(:,:,t)); end
                 if nd == 3; Yt = double(Y(:,:,:,t)); end
         end        
+        minY = min(Yt(:));
+        maxY = max(Yt(:));        
         Yt = Yt + add_value;
         ind = rem(t,bin_width) + bin_width*(rem(t,bin_width)==0);
         Yc = mat2cell_ov(Yt,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
@@ -288,7 +290,7 @@ for it = 1:iter
                         shifts_temp(i,j,k,2) = output(4); 
                         diff_temp(i,j,k) = output(2);
                         if mot_uf == 1
-                            M_fin{i,j,k} = remove_boundaries(M_temp,output(3:end),'zero',template{i,j,k},add_value);
+                            M_fin{i,j,k} = remove_boundaries(M_temp,output(3:end),'NaN',template{i,j,k},add_value);
                         end                                               
                     end
                 end
@@ -337,7 +339,7 @@ for it = 1:iter
                     for k = 1:length(zz_uf)
                         extended_grid = [max(xx_us(i)-overlap_post(1),1),min(xx_uf(i)+overlap_post(1),d1),max(yy_us(j)-overlap_post(2),1),min(yy_uf(j)+overlap_post(2),d2),max(zz_us(k)-overlap_post(3),1),min(zz_uf(k)+overlap_post(3),d3)];
                         I_temp = Yt(extended_grid(1):extended_grid(2),extended_grid(3):extended_grid(4),extended_grid(5):extended_grid(6));
-                        M_fin{i,j,k} = shift_reconstruct2(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'zero',add_value);
+                        M_fin{i,j,k} = shift_reconstruct2(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'NaN',add_value);
                     end
                 end
             end
@@ -359,8 +361,10 @@ for it = 1:iter
         else            
             Mf = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY) - add_value;
         end
-
-        Mf(Mf==-add_value) = NaN;
+        
+        %pix = (Mf==-add_value);
+        Mf(Mf<minY) = minY;
+        Mf(Mf>maxY) = maxY;
         
         if strcmpi(filetype,'mat');
             if nd == 2; M_final(:,:,t) = Mf; end

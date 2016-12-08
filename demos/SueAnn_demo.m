@@ -11,36 +11,37 @@ for t = 2:T
     Y(:,:,t) = double(imread(name,'Index',t,'Info',tiffInfo));
 end
 toc
-%Y = Y - min(Y(:));
+
 %% set parameters (first try out rigid motion correction)
 
-options.grid_size = [size(Y,1),size(Y,2)];  % size of patch in each direction
-options.bin_width = 30;                     % number of bins after which you update template
-options.mot_uf = 1;                         % upsampling factor for smaller patches
-options.us_fac = 10;                         % upsampling factor for subpixel registration
-options.method = {'median','mean'};           % averaging method for computing and updating templates
-options.overlap_pre = 16;                   % amount of overlap for each patch
-options.overlap_post = 16;                  % amount of overlap for each patch
-options.plot_flag = false;                  % flag for plotting results while correcting
-options.memmap = false;                     % save output in a .mat file
-options.iter = 1;
-options.max_shift = 15;
+options_r.grid_size = [size(Y,1),size(Y,2)];  % size of patch in each direction
+options_r.bin_width = 30;                     % number of bins after which you update template
+options_r.mot_uf = 1;                         % upsampling factor for smaller patches
+options_r.us_fac = 10;                         % upsampling factor for subpixel registration
+options_r.method = {'median','mean'};           % averaging method for computing and updating templates
+options_r.overlap_pre = 16;                   % amount of overlap for each patch
+options_r.overlap_post = 16;                  % amount of overlap for each patch
+options_r.plot_flag = false;                  % flag for plotting results while correcting
+options_r.memmap = false;                     % save output in a .mat file
+options_r.iter = 1;
+options_r.max_shift = 15;
 
 %% perform motion correction
 %profile on
-tic; [M1,shifts1,template1] = normcorre(Y,options); toc
+tic; [M1,shifts1,template1] = normcorre(Y,options_r); toc
 %profile off
 %profile viewer
 
 %% now try non-rigid
-options.grid_size = [128,128];              % size of patch in each direction
-options.mot_uf = 4;                         % further upsample by a given factor
-options.plot_flag = false;                  % flag for plotting results while correcting
-options.make_avi = false;
-options.name = 'sueann_motion_corrected.avi';
-options.fr = 30;
+options_nr = options_r;
+options_nr.grid_size = [128,128];              % size of patch in each direction
+options_nr.mot_uf = 4;                         % further upsample by a given factor
+options_nr.plot_flag = false;                  % flag for plotting results while correcting
+options_nr.make_avi = false;
+options_nr.name = 'sueann_motion_corrected.avi';
+options_nr.fr = 30;
 
-tic; [M2,shifts2,template2] = normcorre(Y,options); toc
+tic; [M2,shifts2,template2] = normcorre(Y,options_nr); toc
 
 % These results are with only one pass of the data completely online. In
 % practice we can improve if we do multiple passes (with options.iter > 1)
@@ -49,12 +50,11 @@ tic; [M2,shifts2,template2] = normcorre(Y,options); toc
 
 %% plot data
 
-nnY = quantile(Y(:),0.005);
-mmY = quantile(Y(:),0.995);
+[nnY,mmY] = quantile(Y(:),[0.005,0.995]);
 
-[cY,mY,vY] = motion_metrics(Y,options.max_shift);
-[cM1,mM1,vM1] = motion_metrics(M1,options.max_shift);
-[cM2,mM2,vM2] = motion_metrics(M2,options.max_shift);
+[cY,mY,vY] = motion_metrics(Y,options_nr.max_shift);
+[cM1,mM1,vM1] = motion_metrics(M1,options_nr.max_shift);
+[cM2,mM2,vM2] = motion_metrics(M2,options_nr.max_shift);
 
 T = length(cY);
 %% plot metrics
@@ -95,8 +95,7 @@ tsub = 5;
 
 Y_ds = downsample_data(Y,'time',tsub);
 M_ds = downsample_data(M2,'time',tsub);
-nnY = quantile(Y_ds(:),0.005);
-mmY = quantile(Y_ds(:),0.99);
+[nnY,mmY] = quantile(Y_ds(:),[0.005,0.995]);
 %%
 figure;
 for t = 1:1:size(Y_ds,3)

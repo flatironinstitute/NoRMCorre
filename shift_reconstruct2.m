@@ -40,6 +40,10 @@ if any(shifts)
     Greg = Greg*exp(1i*diffphase);
     I = real(ifftn(Greg));
     I = remove_boundaries(I,shifts,method,add_value);
+    minY = min(Y(:));
+    maxY = max(Y(:));
+    I(I<minY)=minY;
+    I(I>maxY)=maxY;
 else
     I = Y;
 end
