@@ -50,8 +50,9 @@ tic; [M2,shifts2,template2] = normcorre(Y,options_nr); toc
 
 %% plot data
 
-[nnY,mmY] = quantile(Y(:),[0.005,0.995]);
-
+nnY = quantile(Y(1:10000),0.005);
+mmY = quantile(Y(1:10000),0.995);
+%%
 [cY,mY,vY] = motion_metrics(Y,options_nr.max_shift);
 [cM1,mM1,vM1] = motion_metrics(M1,options_nr.max_shift);
 [cM2,mM2,vM2] = motion_metrics(M2,options_nr.max_shift);
@@ -95,14 +96,15 @@ tsub = 5;
 
 Y_ds = downsample_data(Y,'time',tsub);
 M_ds = downsample_data(M2,'time',tsub);
-[nnY,mmY] = quantile(Y_ds(:),[0.005,0.995]);
+nnY_ds = quantile(Y_ds(:),0.005);
+mmY_ds = quantile(Y_ds(:),0.995);
 %%
 figure;
 for t = 1:1:size(Y_ds,3)
-    subplot(121);imagesc(Y_ds(:,:,t),[nnY,mmY]); xlabel('Raw data (downsampled)','fontsize',14,'fontweight','bold'); axis equal; axis tight;
+    subplot(121);imagesc(Y_ds(:,:,t),[nnY_ds,mmY_ds]); xlabel('Raw data (downsampled)','fontsize',14,'fontweight','bold'); axis equal; axis tight;
     title(sprintf('Frame %i out of %i',t,T),'fontweight','bold','fontsize',14); colormap('bone');
     set(gca,'XTick',[],'YTick',[]);
-    subplot(122);imagesc(M_ds(:,:,t),[nnY,mmY]); xlabel('non-rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
+    subplot(122);imagesc(M_ds(:,:,t),[nnY_ds,mmY_ds]); xlabel('non-rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
     title(sprintf('Frame %i out of %i',t,T),'fontweight','bold','fontsize',14); colormap('bone')
     set(gca,'XTick',[],'YTick',[]);
     drawnow;
