@@ -1,0 +1,174 @@
+function options = NoRMCorreSetParms(varargin)
+
+% Struct for setting the NoRMCorre algorithm parameters. Any parameter that is
+% not set gets a default value
+
+% Author: Eftychios A. Pnevmatikakis
+%            Simons Foundation, 2016
+
+Names = [
+    % dataset info
+    'd1                 ' % number of rows
+    'd2                 ' % number of cols
+    'd3                 ' % number of planes (for 3d imaging, default: 1)
+    % patches
+    'grid_size          ' % size of non-overlapping regions (default: [d1,d2,d3])
+    'overlap_pre        ' % size of overlapping region (default: [32,32,16])
+    'min_patch_size     ' % minimum size of patch (default: [32,32,16])    
+    'us_fac             ' % upsampling factor for subpixel registration (default: 10)
+    'mot_uf             ' % degree of patches upsampling (default: [4,4,1])
+    'max_dev            ' % maximum deviation of patch shift from rigid shift (default: [3,3,1])
+    'overlap_post       ' % size of overlapping region after upsampling (default: [32,32,16])
+    'max_shift          ' % maximum rigid shift in each direction (default: [10,10,5])
+    % template updating
+    'upd_template       ' % flag for online template updating (default: true)
+    'init_batch         ' % length of initial batch (default: 30)
+    'bin_width          ' % width of each bin (default: 10)
+    'buffer_width       ' % number of local means to keep in memory (default: 50)
+    'method             ' % method for averaging the template (default: {'median';'mean
+    'iter               ' % number of data passes (default: 1)
+    % misc
+    'add_value          ' % add dc value to data (default: 0)
+    'use_parallel       ' % for each frame, update patches in parallel (default: false)
+    'memmap             ' % flag for saving memory mapped motion corrected file (default: false)
+    'mem_filename       ' % name for memory mapped file (default: 'motion_corrected.mat')
+    % plotting
+    'plot_flag          ' % flag for plotting results in real time (default: false)
+    'make_avi           ' % flag for making movie (default: false)
+    'name               ' % name for movie (default: 'motion_corrected.avi')
+    'fr                 ' % frame rate for movie (default: 30)
+   ]; 
+   
+[m,n] = size(Names);
+names = lower(Names);
+
+% Combine all leading options structures o1, o2, ... in l1Set(o1,o2,...).
+options = [];
+for j = 1:m
+    eval(['options.' Names(j,:) '= [];']);
+end
+i = 1;
+while i <= nargin
+    arg = varargin{i};
+    if ischar(arg), break; end
+    if ~isempty(arg)                      % [] is a valid options argument
+        if ~isa(arg,'struct')
+            error(sprintf(['Expected argument %d to be a string parameter name ' ...
+                'or an options structure\ncreated with OPTIMSET.'], i));
+        end
+        for j = 1:m
+            if any(strcmp(fieldnames(arg),deblank(Names(j,:))))
+                eval(['val = arg.' Names(j,:) ';']);
+            else
+                val = [];
+            end
+            if ~isempty(val)
+                eval(['options.' Names(j,:) '= val;']);
+            end
+        end
+    end
+    i = i + 1;
+end
+
+% A finite state machine to parse name-value pairs.
+if rem(nargin-i+1,2) ~= 0
+    error('Arguments must occur in name-value pairs.');
+end
+expectval = 0;                          % start expecting a name, not a value
+while i <= nargin
+    arg = varargin{i};
+    
+    if ~expectval
+        if ~ischar(arg)
+            error(sprintf('Expected argument %d to be a string parameter name.', i));
+        end
+        
+        lowArg = lower(arg);
+        j = strmatch(lowArg,names);
+        if isempty(j)                       % if no matches
+            error(sprintf('Unrecognized parameter name ''%s''.', arg));
+        elseif length(j) > 1                % if more than one match
+            % Check for any exact matches (in case any names are subsets of others)
+            k = strmatch(lowArg,names,'exact');
+            if length(k) == 1
+                j = k;
+            else
+                msg = sprintf('Ambiguous parameter name ''%s'' ', arg);
+                msg = [msg '(' deblank(Names(j(1),:))];
+                for k = j(2:length(j))'
+                    msg = [msg ', ' deblank(Names(k,:))];
+                end
+                msg = sprintf('%s).', msg);
+                error(msg);
+            end
+        end
+        expectval = 1;                      % we expect a value next
+        
+    else
+        eval(['options.' Names(j,:) '= arg;']);
+        expectval = 0;
+        
+    end
+    i = i + 1;
+end
+
+if expectval
+    error(sprintf('Expected value for parameter ''%s''.', arg));
+end
+
+Values = [
+ % dataset info
+    {[]} 
+    {[]}
+    {1}
+    % patches
+    {[]}                  % size of non-overlapping regions (default: [d1,d2,d3])
+    {[32,32,16]}          % size of overlapping region (default: [32,32,16])
+    {[32,32,16]}          % minimum size of patch (default: [32,32,16])    
+    {10}                  % upsampling factor for subpixel registration (default: 10)
+    {[4,4,1]}             % degree of patches upsampling (default: [4,4,1])
+    {[3,3,1]}             % maximum deviation of patch shift from rigid shift (default: [3,3,1])
+    {[32,32,16]}          % size of overlapping region after upsampling (default: [32,32,16])
+    {[10,10,5]}           % maximum rigid shift in each direction
+    % template updating
+    {true}                % flag for online template updating (default: true)
+    {30}                  % length of initial batch (default: 30)
+    {10}                  % width of each bin (default: 10)
+    {50}                  % number of local means to keep in memory (default: 50)
+    {{'median';'mean'}}   % method for averaging the template (default: {'median';'mean'}
+    {1}                   % number of data passes (default: 1)
+    % misc
+    {0}                   % add dc value to data (default: 0)
+    {false}               % for each frame, update patches in parallel (default: false)
+    {false}               % flag for saving memory mapped motion corrected file (default: false)
+    {'motion_corrected.mat'} % name for memory mapped file (default: 'motion_corrected.mat')
+    % plotting
+    {false}               % flag for plotting results in real time (default: false)
+    {false}               % flag for making movie (default: false)
+    {'motion_corrected.avi'} % name for movie (default: 'motion_corrected.avi')
+    {30} % frame rate for movie (default: 30)   
+    ];
+
+for j = 1:m
+    if eval(['isempty(options.' Names(j,:) ')'])
+        eval(['options.' Names(j,:) '= Values{j};']);
+    end
+end
+
+if isempty(options.d1); options.d1 = input('What is the total number of rows? \n'); end
+if isempty(options.d2); options.d2 = input('What is the total number of columns? \n'); end
+%if options.d3 == 1; nd = 2; else nd = 3; end
+if isempty(options.grid_size); options.grid_size = [options.d1,options.d2,options.d3]; end
+if length(options.grid_size) == 1; options.grid_size = options.grid_size*ones(1,3); end
+if length(options.grid_size) == 2; options.grid_size(3) = 1; end
+if length(options.overlap_pre) == 1; options.overlap_pre = options.overlap_pre*ones(1,3); end
+if length(options.overlap_pre) == 2; options.overlap_pre(3) = 1; end
+if length(options.overlap_post) == 1; options.overlap_post = options.overlap_post*ones(1,3); end
+if length(options.overlap_post) == 2; options.overlap_post(3) = 1; end
+if length(options.max_shift) == 1; options.max_shift = options.max_shift*ones(1,3); end
+if length(options.max_shift) == 2; options.max_shift(3) = 1; end
+if length(options.max_dev) == 1; options.max_dev = options.max_dev*ones(1,3); end
+if length(options.max_dev) == 2; options.max_dev(3) = 1; end
+if length(options.mot_uf) == 1; options.mot_uf = options.mot_uf*ones(1,3); end
+if length(options.mot_uf) == 2; options.mot_uf(3) = 1; end
+options.mot_uf(options.grid_size >= [options.d1,options.d2,options.d3]) = 1;
