@@ -2,7 +2,7 @@ function I = shift_reconstruct2(Y,shifts,diffphase,us_fac,Nr,Nc,Np,method,add_va
 
 % applies 3-d sub-pixel shifts to an input image
 % INPUTS:
-% Y:            input image (double 3d tensor)
+% Y:            input image (double 3d tensor) in space (real) or frequency (complex) domain
 % shifts:       shifts 
 % diffphase:    phase difference
 % us_fac:       upsampling factor for subpixel shifts
@@ -13,6 +13,12 @@ function I = shift_reconstruct2(Y,shifts,diffphase,us_fac,Nr,Nc,Np,method,add_va
 % I:        output image
 
 % Written by Eftychios A. Pnevmatikakis, Simons Foundation, 2016
+
+if isreal(Y);
+    buf2ft = fftn(Y);
+else
+    buf2ft = Y;
+end
 
 if nargin < 8 || isempty(add_value); add_value = 0; end
 if nargin < 7 || isempty(method); method = 'zero'; end
@@ -29,7 +35,6 @@ if any(shifts)
     col_shift = shifts(2);
     if ismatrix(Y); pln_shift = 0; else pln_shift = shifts(3); end
     shifts = [row_shift,col_shift,pln_shift];
-    buf2ft = fftn(Y);
 
     if us_fac > 0
         if isvector(Nc); [Nc,Nr,Np] = meshgrid(Nc,Nr,Np); end
@@ -39,13 +44,13 @@ if any(shifts)
     end
     Greg = Greg*exp(1i*diffphase);
     I = real(ifftn(Greg));
-    I = remove_boundaries(I,shifts,method,add_value);
-    minY = min(Y(:));
-    maxY = max(Y(:));
-    I(I<minY)=minY;
-    I(I>maxY)=maxY;
+    I = remove_boundaries(I,shifts,method,add_value);    
 else
-    I = Y;
+    if isreal(Y)
+        I = Y;
+    else
+        I = real(ifftn(Y));
+    end
 end
 
 end

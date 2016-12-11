@@ -2,7 +2,7 @@ function I = shift_reconstruct(Y,shifts,us_fac,Nr,Nc,Np,method,add_value)
 
 % applies 3-d sub-pixel shifts to an input image
 % INPUTS:
-% Y:            input image (double 3d tensor)
+% Y:            input image (double 3d tensor) in space (real) or frequency (complex) domain
 % shifts:       shifts 
 % us_fac:       upsampling factor for subpixel shifts
 % method:       method for treating boundaries
