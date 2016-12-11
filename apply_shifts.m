@@ -60,6 +60,7 @@ if flag_constant;
 end
 
 for t = 1:T  
+    shifts(t).diff(:) = 0;
     if ~flag_constant
         Yc = mat2cell_ov(Y(:,:,t),xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
         Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
