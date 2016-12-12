@@ -25,18 +25,18 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
     if nargin < 3 || isempty(num2read); num2read = T - sframe + 1; end
     num2read = min(num2read,T - sframe + 1);
     
-    Y1 = imread(name,'Index',sframe,'Info',tiffInfo);
+    Y1 = imread(path_to_file,'Index',sframe,'Info',tiffInfo);
     imData = zeros([size(Y1),num2read],'like',Y1);
     nd = ndims(Y1);
     if nd == 2
         imData(:,:,1) = Y1;   
         for t = sframe+1:sframe+num2read-1
-            imData(:,:,t) = imread(name,'Index',t,'Info',tiffInfo);
+            imData(:,:,t) = imread(path_to_file,'Index',t,'Info',tiffInfo);
         end
     elseif nd == 3
         imData(:,:,:,1) = Y1;   
         for t = sframe+1:sframe+num2read-1
-            imData(:,:,:,t) = imread(name,'Index',t,'Info',tiffInfo);
+            imData(:,:,:,t) = imread(path_to_file,'Index',t,'Info',tiffInfo);
         end        
     end
     

@@ -1,44 +1,68 @@
 clear;
 %% read data and convert to double
-name = '/Users/epnevmatikakis/Downloads/H16_M17_S54/msCam5.avi';
+%name = '/Users/epnevmatikakis/Downloads/H16_M17_S54/msCam5.avi';
+name = '/Users/epnevmatikakis/Documents/Ca_datasets/Miniscope/msCam13.avi';
 addpath(genpath('../../NoRMCorre'));
 Y = read_file(name);
 Y = double(Y);
-%% remove a percentile value
-p = 10;
+[d1,d2,T] = size(Y);
+
+%% perform some sort of deblurring/high pass filtering
+hLarge = fspecial('average', 40);
+hSmall = fspecial('average', 2); 
 Yf = Y;
-Ypc = prctile(Y,p,3);
-Y = bsxfun(@minus,Yf,Ypc);
+for t = 1:T
+    Y(:,:,t) = filter2(hSmall,Yf(:,:,t)) - filter2(hLarge, Yf(:,:,t));
+end
+
+Ypc = Yf - Y;
+%p = 10;
+%Yf = Y;
+%Ypc = prctile(Y,p,3);
+%Y = bsxfun(@minus,Yf,Ypc);
 %Y = prctfilt(Yf,p,200,100);
 %Ypc = bsxfun(@minus,Yf,Y);
 
 %% first try out rigid motion correction
-[d1,d2,T] = size(Y);
-options_r = NoRMCorreSetParms('d1',d1,'d2',d2,'bin_width',30,'max_shift',20,'iter',2);
+options_r = NoRMCorreSetParms('d1',d1-40,'d2',d2-40,'bin_width',30,'max_shift',20,'iter',1);
 
 %% register data and apply shifts to removed percentile
-tic; [M1,shifts1,template1,options_r] = normcorre(Y,options_r); toc % register filtered data
-tic; I = apply_shifts(Ypc,shifts1,options_r); toc % apply shifts to removed percentile
-Mr = M1 + I; % rigid motion
+tic; [M1,shifts1,template1] = normcorre_batch(Y(21:end-20,21:end-20,:),options_r); toc % register filtered data
+tic; Mr = apply_shifts(Yf,shifts1,options_r,20,20); toc % apply shifts to removed percentile
+
+%Mr = M1 + I; % rigid motion
 
 %% compute metrics
-[cYa,mYa,vYa] = motion_metrics(Y,options_r.max_shift);
+[cYa,mYa,vYa] = motion_metrics(Y,20+options_r.max_shift);
 [cM1a,mM1a,vM1a] = motion_metrics(M1,options_r.max_shift);
-[cYb,mYb,vYb] = motion_metrics(bsxfun(@plus,Y,Ypc),options_r.max_shift);
-[cM1b,mM1b,vM1b] = motion_metrics(Mr,options_r.max_shift);
+[cYb,mYb,vYb] = motion_metrics(Yf,options_r.max_shift);
+[cM1b,mM1b,vM1b] = motion_metrics(Mr,20+options_r.max_shift);
+
+shifts_r = horzcat(shifts1(:).shifts)';
+figure;
+    subplot(311); plot(shifts_r);
+    subplot(312); plot(1:T,cYa,1:T,cM1a);
+    subplot(313); plot(1:T,cYb,1:T,cM1b);
 
 %% now apply non-rigid motion correction
-options_nr = NoRMCorreSetParms('d1',d1,'d2',d2,'bin_width',30, ...
+options_nr = NoRMCorreSetParms('d1',d1-40,'d2',d2-40,'bin_width',30, ...
     'grid_size',[128,128],'mot_uf',4, ...
     'overlap_pre',32,'overlap_post',32,'max_shift',20);
 
-tic; [M2,shifts2,template2,options_nr] = normcorre(Y,options_nr); toc % register filtered data
-tic; I2 = apply_shifts(Ypc,shifts2,options_nr); toc % apply the shifts to the removed percentile
-Mpr = M2 + I2;
+tic; [M2,shifts2,template2] = normcorre_batch(Y(21:end-20,21:end-20,:),options_nr); toc % register filtered data
+tic; Mpr = apply_shifts(Yf,shifts2,options_nr,20,20); toc % apply the shifts to the removed percentile
+
+%Mpr = M2 + I2;
+%%
+options_nr = NoRMCorreSetParms('d1',d1-40,'d2',d2-40,'bin_width',30, ...
+    'grid_size',[128,128],'mot_uf',4, ...
+    'overlap_pre',32,'overlap_post',32,'max_shift',20);
+tic; Mprf = apply_shifts(Yf,shifts2,options_nr); toc % apply the shifts to the removed percentile
+
 
 %% compute metrics
 [cM2a,mM2a,vM2a] = motion_metrics(M2,options_nr.max_shift);
-[cM2b,mM2b,vM2b] = motion_metrics(Mpr,options_nr.max_shift);
+[cM2b,mM2b,vM2b] = motion_metrics(Mprf,options_nr.max_shift);
 
 %% plot shifts        
 
@@ -70,15 +94,15 @@ Yf_ds = downsample_data(Yf,'time',tsub);
 M1_ds = downsample_data(M1,'time',tsub);
 M1f_ds = downsample_data(Mr,'time',tsub);
 M2_ds = downsample_data(M2,'time',tsub);
-M2f_ds = downsample_data(Mpr,'time',tsub);
+M2f_ds = downsample_data(Mprf,'time',tsub);
 nnY_ds = quantile(Y_ds(:),0.0005);
 mmY_ds = quantile(Y_ds(:),0.9995);
 nnYf_ds = quantile(Yf_ds(:),0.0005);
 mmYf_ds = quantile(Yf_ds(:),0.99995);
 %% 
-make_avi = false;
+make_avi = true;
 if make_avi
-    vidObj = VideoWriter('full.avi');
+    vidObj = VideoWriter('filtered.avi');
     set(vidObj,'FrameRate',30);
     open(vidObj);
 end
@@ -89,15 +113,15 @@ fig = figure;
     set(gcf, 'Position', round([100 100 fac*3*d2 fac*d1]));
 
 for t = 1:1:size(Y_ds,3)-1
-    subplot(131);imagesc(Yf_ds(:,:,t),[nnYf_ds,mmYf_ds]); xlabel('Raw data (downsampled)','fontsize',14,'fontweight','bold'); axis equal; axis tight;
+    subplot(131);imagesc(Y_ds(:,:,t),[nnY_ds,mmY_ds]); xlabel('Raw data (downsampled)','fontsize',14,'fontweight','bold'); axis equal; axis tight;
     %title(sprintf('Frame %i out of %i',t,size(Y_ds,3)),'fontweight','bold','fontsize',14); 
     colormap('bone');
     set(gca,'XTick',[],'YTick',[]);
-    subplot(132);imagesc(M1f_ds(:,:,t),[nnYf_ds,mmYf_ds]); xlabel('rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
+    subplot(132);imagesc(M1_ds(:,:,t),[nnY_ds,mmY_ds]); xlabel('rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
     title(sprintf('Frame %i out of %i',t,size(Y_ds,3)),'fontweight','bold','fontsize',14); 
     colormap('bone')
     set(gca,'XTick',[],'YTick',[]);
-    subplot(133);imagesc(M2f_ds(:,:,t),[nnYf_ds,mmYf_ds]); xlabel('non-rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
+    subplot(133);imagesc(M2_ds(:,:,t),[nnY_ds,mmY_ds]); xlabel('non-rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
     %title(sprintf('Frame %i out of %i',t,size(Y_ds,3)),'fontweight','bold','fontsize',14); 
     colormap('bone')
     set(gca,'XTick',[],'YTick',[]);
