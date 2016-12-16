@@ -61,24 +61,24 @@ if nd == 2
 elseif nd == 3
     defoptions.mot_uf = [2,2,1];
 end
-defoptions.min_patch_size = [32,32,16];       % minimum patch size 
-defoptions.overlap_pre = [16,16,2];           % overlap between subsets within each patch
-defoptions.overlap_post = [8,8,2];            % overlap between subsets within each patch
-defoptions.upd_template = true;               % flag for updating template
-defoptions.bin_width = 10;                    % width of buffer for computing the moving template
-defoptions.buffer_width = 50;                 % number of local means to keep in memory
-defoptions.init_batch = 30;                   % length of initial batch
-defoptions.max_dev = [3,3,1];                 % maximum deviation around rigid translation
-defoptions.us_fac = 5;                        % upsampling factor for subpixel registration
-defoptions.method = {'median';'mean'};        % method for averaging the template
-defoptions.plot_flag = false;                 % flag for plotting results in real time
-defoptions.filename = 'motion_corrected.mat'; % filename for motion corrected mat file
-defoptions.use_parallel = false;              % use parfor when breaking each frame into patches
-defoptions.make_avi = false;                  % flag for making movie
-defoptions.name = 'motion_corrected.avi';     % name of saved movie
-defoptions.fr = 30;                           % frame rate for saved movie
-defoptions.iter = 1;                          % number of passes over the data
-defoptions.add_value = 0;                     % add value to make dataset non-negative
+defoptions.min_patch_size = [32,32,16];             % minimum patch size 
+defoptions.overlap_pre = [16,16,2];                 % overlap between subsets within each patch
+defoptions.overlap_post = [8,8,2];                  % overlap between subsets within each patch
+defoptions.upd_template = true;                     % flag for updating template
+defoptions.bin_width = 10;                          % width of buffer for computing the moving template
+defoptions.buffer_width = 50;                       % number of local means to keep in memory
+defoptions.init_batch = 30;                         % length of initial batch
+defoptions.max_dev = [3,3,1];                       % maximum deviation around rigid translation
+defoptions.us_fac = 5;                              % upsampling factor for subpixel registration
+defoptions.method = {'median';'mean'};              % method for averaging the template
+defoptions.plot_flag = false;                       % flag for plotting results in real time
+defoptions.mem_filename = 'motion_corrected.mat';   % filename for motion corrected mat file
+defoptions.use_parallel = false;                    % use parfor when breaking each frame into patches
+defoptions.make_avi = false;                        % flag for making movie
+defoptions.name = 'motion_corrected.avi';           % name of saved movie
+defoptions.fr = 30;                                 % frame rate for saved movie
+defoptions.iter = 1;                                % number of passes over the data
+defoptions.add_value = 0;                           % add value to make dataset non-negative
 %defoptions.write_tiff = false;               % save output as a tiff stack
 %defoptions.out_name = 'motion_corrected.tif'; % name for output file name
 
@@ -98,15 +98,13 @@ if ~isfield(options,'init_batch'); options.init_batch = defoptions.init_batch; e
 if ~isfield(options,'us_fac'); options.us_fac = defoptions.us_fac; end; us_fac = options.us_fac;
 if ~isfield(options,'method'); options.method = defoptions.method; end; method = options.method;
 if ~isfield(options,'plot_flag'); options.plot_flag = defoptions.plot_flag; end; plot_flag = options.plot_flag*(nd==2);
-if ~isfield(options,'filename'); options.filename = defoptions.filename; end; filename = options.filename;
+if ~isfield(options,'mem_filename'); options.mem_filename = defoptions.mem_filename; end; filename = options.mem_filename;
 if ~isfield(options,'use_parallel'); options.use_parallel = defoptions.use_parallel; end; use_parallel = options.use_parallel;
 if ~isfield(options,'make_avi'); options.make_avi = defoptions.make_avi; end; make_avi = options.make_avi;
 if ~isfield(options,'name'); options.name = defoptions.name; end; name = options.name;
 if ~isfield(options,'fr'); options.fr = defoptions.fr; end; fr = options.fr;
 if ~isfield(options,'iter'); options.iter = defoptions.iter; end; iter = options.iter;
 if ~isfield(options,'add_value'); options.add_value = defoptions.add_value; end; add_value = options.add_value;
-%if ~isfield(options,'write_tiff'); options.write_tiff = defoptions.write_tiff; end; write_tiff = options.write_tiff;
-%if ~isfield(options,'out_name'); options.out_name = defoptions.out_name; end; out_name = options.out_name;
 if isscalar(grid_size); grid_size = grid_size*ones(1,nd); end; if length(grid_size) == 2; grid_size(3) = 1; end
 if isscalar(mot_uf); mot_uf = mot_uf*ones(1,nd); end; if length(mot_uf) == 2; mot_uf(3) = 1; end
 if isscalar(overlap_pre); overlap_pre = overlap_pre*ones(1,nd); end; if length(overlap_pre) == 2; overlap_pre(3) = 1; end
@@ -126,14 +124,15 @@ end
 
 switch filetype
     case 'tif'
-        Y_temp = double(bigread2(Y,1,init_batch));
+        Y_temp = bigread2(Y,1,init_batch);
     case 'hdf5'
-        Y_temp = double(bigread2(Y,1,init_batch));        
+        Y_temp = bigread2(Y,1,init_batch);        
     case 'mem'
-        if nd == 2; Y_temp = double(Y.Y(:,:,1:init_batch)); elseif nd == 3; Y_temp = double(Y.Y(:,:,:,1:init_batch)); end
+        if nd == 2; Y_temp = Y.Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.Y(:,:,:,1:init_batch); end
     case 'mat'
-        if nd == 2; Y_temp = double(Y(:,:,1:init_batch)); elseif nd == 3; Y_temp = double(Y(:,:,:,1:init_batch)); end
+        if nd == 2; Y_temp = Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y(:,:,:,1:init_batch); end
 end
+Y_temp = double(Y_temp);
 
 if nargin < 3 || isempty(template)
     template_in = median(Y_temp,nd+1)+add_value;
@@ -178,14 +177,15 @@ fftTempMat = fftn(temp_mat);
 if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 
-if strcmpi(filetype,'mat');
+if ~memmap
     M_final = zeros(size(Y));
 else
     M_final = matfile(filename,'Writable',true);
-    if memmap
-        if nd == 2; M_final.M(d1,d2,T) = uint16(0); end
-        if nd == 3; M_final.M(d1,d2,d3,T) = uint16(0); end
-    end
+    if nd == 2; M_final.Y(d1,d2,T) = single(0); end
+    if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
+    M_final.Yr(d1*d2*d3,T) = single(0);
+    if nd == 2; mem_buffer = zeros(d1,d2,options.mem_batch_size,'single'); end
+    if nd == 3; mem_buffer = zeros(d1,d2,d3,options.mem_batch_size,'single'); end
 end
 %%
 if plot_flag
@@ -366,12 +366,19 @@ for it = 1:iter
         Mf(Mf<minY) = minY;
         Mf(Mf>maxY) = maxY;
         
-        if strcmpi(filetype,'mat');
+        if ~memmap
             if nd == 2; M_final(:,:,t) = Mf; end
             if nd == 3; M_final(:,:,:,t) = Mf; end
-        elseif memmap
-            if nd == 2; M_final.M(:,:,t) = uint16(Mf); end
-            if nd == 3; M_final.M(:,:,:,t) = uint16(Mf); end
+        else           
+            rem_mem = rem(t,options.mem_batch_size);
+            if rem_mem == 0; rem_mem = options.mem_batch_size; end
+            if nd == 2; mem_buffer(:,:,rem_mem) = single(Mf); end
+            if nd == 3; mem_buffer(:,:,:,rem_mem) = single(Mf); end
+            if rem_mem == options.mem_batch_size || t == T
+                if nd == 2; M_final.Y(:,:,t-rem_mem+1:t) = mem_buffer(:,:,1:rem_mem); end
+                if nd == 3; M_final.Y(:,:,:,t-rem_mem+1:t) = mem_buffer(:,:,:,1:rem_mem); end
+                M_final.Yr(:,t-rem_mem+1:t) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
+            end            
         end                        
         if plot_flag && mod(t,1) == 0
             subplot(221); imagesc(Yt-add_value,[nnY,mmY]); title('Raw data','fontweight','bold','fontsize',14); 
@@ -391,7 +398,7 @@ if it == iter
     template = cellfun(@(x) x - add_value,template,'un',0);
     template = cell2mat_ov(template,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
 end
-if ~strcmpi(filetype,'mat');
+if memmap
     M_final.shifts = shifts;
     M_final.template = template;
 end
