@@ -7,7 +7,7 @@ memmap = isobject(Y);
 
 if memmap
     if ~exist('var_name','var')
-        try sizY = size(Y,'Z'); var_name = 'Y'; catch; sizY = size(Y,'M'); var_name = 'M'; end
+        try sizY = size(Y,'Y'); var_name = 'Y'; catch; sizY = size(Y,'M'); var_name = 'M'; end
     end
 else
     sizY = size(Y);
