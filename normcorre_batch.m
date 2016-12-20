@@ -215,7 +215,7 @@ for it = 1:iter
             M_fin = cell(length(xx_us),length(yy_us),length(zz_us)); %zeros(size(Y_temp));
             shifts_temp = zeros(length(xx_s),length(yy_s),length(zz_s),nd); 
             diff_temp = zeros(length(xx_s),length(yy_s),length(zz_s));
-            if numel(M_fin) > 1           
+            if numel(M_fin) > 1      
                 if nd == 2; out_rig = dftregistration_max(fftTempMat,fftn(Yt),us_fac,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
                 if nd == 3; out_rig = dftregistration_max_3d(fftTempMat,fftn(Yt),us_fac,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
                 max_dev = max_dev_g;
@@ -307,21 +307,6 @@ for it = 1:iter
             end 
         end    
         
-%         if ~memmap
-%             if nd == 2; M_final(:,:,t) = Mf; end
-%             if nd == 3; M_final(:,:,:,t) = Mf; end
-%         else           
-%             rem_mem = rem(t,options.mem_batch_size);
-%             if rem_mem == 0; rem_mem = options.mem_batch_size; end
-%             if nd == 2; mem_buffer(:,:,rem_mem) = single(Mf); end
-%             if nd == 3; mem_buffer(:,:,:,rem_mem) = single(Mf); end
-%             if rem_mem == options.mem_batch_size || t == T
-%                 if nd == 2; M_final.Y(:,:,t-rem_mem+1:t) = mem_buffer(:,:,1:rem_mem); end
-%                 if nd == 3; M_final.Y(:,:,:,t-rem_mem+1:t) = mem_buffer(:,:,:,1:rem_mem); end
-%                 M_final.Yr(:,t-rem_mem+1:t) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
-%             end            
-%         end
-%         
         % update template
         disp(t)
         if upd_template
@@ -347,8 +332,11 @@ for it = 1:iter
                 end
                 template = mat2cell_ov(nanmedian(buffer_med,nd+1),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
             end
-            fftTemp = cellfun(@fftn, template, 'un',0);
             temp_mat = cell2mat_ov(template,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
+            temp_mat(isnan(temp_mat)) = template_in(isnan(temp_mat));
+            template_in = temp_mat;
+            template = mat2cell_ov(temp_mat,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
+            fftTemp = cellfun(@fftn, template, 'un',0);            
             fftTempMat = fftn(temp_mat);
         end
     end

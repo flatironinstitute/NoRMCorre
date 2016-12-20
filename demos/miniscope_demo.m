@@ -30,7 +30,23 @@ options_r = NoRMCorreSetParms('d1',d1-40,'d2',d2-40,'bin_width',30,'max_shift',2
 tic; [M1,shifts1,template1] = normcorre_batch(Y(21:end-20,21:end-20,:),options_r); toc % register filtered data
 tic; Mr = apply_shifts(Yf,shifts1,options_r,20,20); toc % apply shifts to removed percentile
 
+%%
+
+gSig = 7; gSiz = 17; 
+psf = fspecial('gaussian', round(gSiz), gSig);
+ind_nonzero = (psf(:)>=max(psf(:,1)));
+psf = psf-mean(psf(ind_nonzero));
+psf(~ind_nonzero) = 0;   % only use pixels within the center disk
+Y2 = imfilter(Yf,psf,'same');
+Ypc2 = Yf - Y2;
 %Mr = M1 + I; % rigid motion
+%% first try out rigid motion correction
+options_r = NoRMCorreSetParms('d1',d1-40,'d2',d2-40,'bin_width',30,'max_shift',20,'iter',1);
+
+%% register data and apply shifts to removed percentile
+tic; [M2,shifts2,template2] = normcorre_batch(Y2(21:end-20,21:end-20,:),options_r); toc % register filtered data
+tic; Mr2 = apply_shifts(Yf,shifts2,options_r,20,20); toc % apply shifts to removed percentile
+
 
 %% compute metrics
 [cYa,mYa,vYa] = motion_metrics(Y,20+options_r.max_shift);
