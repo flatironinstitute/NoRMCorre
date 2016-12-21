@@ -1,35 +1,21 @@
 clear
+parpool;
 name = 'granule_love2.tif';
 Y = bigread2(name); % read the file (optional, you can also pass the path in the function instead of Y)
 Y = double(Y);      % convert to double precision 
 T = size(Y,ndims(Y));
-Y = Y - min(Y(:));
+%Y = Y - min(Y(:));
 %% set parameters (first try out rigid motion correction)
 
-options_r.grid_size = [size(Y,1),size(Y,2)];  % size of patch in each direction
-options_r.bin_width = 50;                     % number of bins after which you update template
-options_r.mot_uf = 1;                         % upsampling factor for smaller patches
-options_r.us_fac = 10;                         % upsampling factor for subpixel registration
-options_r.method = {'median','mean'};         % averaging method for computing and updating templates
-options_r.overlap_pre = 16;                   % amount of overlap for each patch
-options_r.overlap_post = 16;                  % amount of overlap for each patch
-options_r.iter = 1;                           % number of passes (set to 1 for one-pass online processing)
-options_r.plot_flag = false;                  % flag for plotting results while correcting
-options_r.memmap = false;                     % save output in a .mat file
-options_r.max_shift = 15;
+options_rigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'bin_width',50,'max_shift',15,'us_fac',50);
 
 %% perform motion correction
-tic; [M1,shifts1,template1] = normcorre(Y,options_r); toc
+tic; [M1,shifts1,template1] = normcorre(Y,options_rigid); toc
 
-%% now try non-rigid motion correction
-options_nr = options_r;
-options_nr.grid_size = [32,32];                % size of patch in each direction
-options_nr.mot_uf = 4;                         % further upsample by a given factor
-options_nr.max_dev = 3;
-tic; [M2,shifts2,template2] = normcorre(Y,options_nr); toc
+%% now try non-rigid motion correction (also in parallel)
+options_nonrigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'grid_size',[32,32],'mot_uf',4,'bin_width',50,'max_shift',15,'max_dev',3,'us_fac',50);
+tic; [M2,shifts2,template2] = normcorre_batch(Y,options_nonrigid); toc
 
-% These results are with only one pass of the data completely online. In
-% practice we can improve if we do multiple passes (with options.iter > 1)
 %% compute metrics
 
 nnY = quantile(Y(:),0.005);

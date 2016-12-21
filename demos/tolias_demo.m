@@ -1,5 +1,5 @@
 clear;
-name = '/Users/epnevmatikakis/Documents/Ca_datasets/Sueann/k56_20160608_RSM_125um_41mW_zoom2p2_00001_00034.tif';
+name = '/Users/epnevmatikakis/Downloads/m11273A_00001_00001.tif';
 addpath(genpath('../../NoRMCorre'));
 tiffInfo = imfinfo(name);
 T = length(tiffInfo);
@@ -14,25 +14,41 @@ toc
 
 %% set parameters (first try out rigid motion correction)
 
-options_rigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'bin_width',50,'max_shift',15,'us_fac',50);
+options_r.grid_size = [size(Y,1),size(Y,2)];  % size of patch in each direction
+options_r.bin_width = 30;                     % number of bins after which you update template
+options_r.mot_uf = 1;                         % upsampling factor for smaller patches
+options_r.us_fac = 10;                         % upsampling factor for subpixel registration
+options_r.method = {'median','mean'};           % averaging method for computing and updating templates
+options_r.overlap_pre = 16;                   % amount of overlap for each patch
+options_r.overlap_post = 16;                  % amount of overlap for each patch
+options_r.plot_flag = false;                  % flag for plotting results while correcting
+options_r.memmap = false;                     % save output in a .mat file
+options_r.iter = 1;
+options_r.max_shift = 15;
 
 %% perform motion correction
-tic; [M1a,shifts1a,template1a] = normcorre(Y,options_rigid); toc
-tic; [M1b,shifts1b,template1b] = normcorre_batch(Y,options_rigid); toc
-[cY,mY,vY] = motion_metrics(Y,options_rigid.max_shift);
-[cM1a,mM1a,vM1a] = motion_metrics(M1a,options_rigid.max_shift);
-[cM1b,mM1b,vM1b] = motion_metrics(M1b,options_rigid.max_shift);
+%profile on
+tic; [M1,shifts1,template1] = normcorre_batch(Y,options_r); toc
+%profile off
+%profile viewer
 
 %% now try non-rigid
 
-%% now try non-rigid motion correction
-options_nonrigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'grid_size',[128,128],'overlap_pre',32,'overlap_post',32,'mot_uf',4,'bin_width',50,'max_shift',15,'max_dev',3,'us_fac',50);
+options_nr = options_r;
+options_nr.grid_size = [256,256]/2;              % size of patch in each direction
+options_nr.mot_uf = 4;                         % further upsample by a given factor
+options_nr.plot_flag = false;                  % flag for plotting results while correcting
+options_nr.make_avi = false;
+options_nr.overlap_pre = 64;
+options_nr.overlap_post = 32;
+options_nr.max_dev = 4;
+options_nr.bin_width = 50;
+%%
+tic; [M2,shifts2,template2] = normcorre(Y2,options_nr,template2); toc
 
-tic; [M2a,shifts2a,template2a] = normcorre(Y,options_nonrigid); toc
-tic; [M2b,shifts2b,template2b] = normcorre_batch(Y,options_nonrigid); toc
-[cM2a,mM2a,vM2a] = motion_metrics(M2a,options_rigid.max_shift);
-[cM2b,mM2b,vM2b] = motion_metrics(M2b,options_rigid.max_shift);
-
+%%
+Y2 = loadtiff('/Users/epnevmatikakis/Downloads/m11273A_00001_00002.tif');
+tic; [M2b,shifts2b,template2] = normcorre_batch(Y2,options_nr,template2); toc
 
 % These results are with only one pass of the data completely online. In
 % practice we can improve if we do multiple passes (with options.iter > 1)
@@ -45,7 +61,7 @@ nnY = quantile(Y(1:10000),0.005);
 mmY = quantile(Y(1:10000),0.995);
 %%
 [cY,mY,vY] = motion_metrics(Y,options_nr.max_shift);
-[cM1,mM1,vM1] = motion_metrics(M1,options_nr.max_shift);
+[cM1,mM1,vM1] = motion_metrics(M2b,options_nr.max_shift);
 [cM2,mM2,vM2] = motion_metrics(M2,options_nr.max_shift);
 
 T = length(cY);
@@ -83,10 +99,10 @@ figure;
 
 %% display downsampled data
 
-tsub = 5;
+tsub = 10;
 
 Y_ds = downsample_data(Y,'time',tsub);
-M_ds = downsample_data(M2,'time',tsub);
+M_ds = downsample_data(M2b,'time',tsub);
 nnY_ds = quantile(Y_ds(:),0.005);
 mmY_ds = quantile(Y_ds(:),0.995);
 %%
@@ -99,5 +115,5 @@ for t = 1:1:size(Y_ds,3)
     title(sprintf('Frame %i out of %i',t,T),'fontweight','bold','fontsize',14); colormap('bone')
     set(gca,'XTick',[],'YTick',[]);
     drawnow;
-    pause(0.001);
+    pause; %(0.02);
 end

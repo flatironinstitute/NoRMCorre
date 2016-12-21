@@ -213,33 +213,6 @@ fprintf('Template initialization complete. \n')
 for it = 1:iter
     if it < iter; plot_flag = 0; else plot_flag = options.plot_flag; end
     for t = 1:T
-        if mod(t,bin_width) == 0 && upd_template
-            disp(t)
-            cnt_buf = cnt_buf + 1;                
-            if strcmpi(method{2},'mean')
-                new_temp = cellfun(@(x) nanmean(x,nd+1), buffer, 'UniformOutput',false);
-            elseif strcmpi(method{2},'median');
-                new_temp = cellfun(@(x) nanmedian(x,nd+1), buffer, 'UniformOutput', false);
-            end
-            if strcmpi(method{1},'mean')
-                cnt = t/bin_width + 1;
-                template = cellfun(@plus, cellfun(@(x) x*(cnt-1)/cnt, template,'un',0), cellfun(@(x) x*1/cnt, new_temp,'un',0), 'un',0);
-            elseif strcmpi(method{1},'median');
-                if cnt_buf <= buffer_width
-                    if nd == 2; buffer_med(:,:,cnt_buf) = cell2mat_ov(new_temp,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
-                    if nd == 3; buffer_med(:,:,:,cnt_buf) = cell2mat_ov(new_temp,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
-                else
-                    buffer_med = circshift(buffer_med,[zeros(1,nd),-1]);
-                    if nd == 2; buffer_med(:,:,buffer_width) = cell2mat_ov(new_temp,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
-                    if nd == 3; buffer_med(:,:,:,buffer_width) = cell2mat_ov(new_temp,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
-                end
-                template = mat2cell_ov(nanmedian(buffer_med,nd+1),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
-            end
-            fftTemp = cellfun(@fftn, template, 'un',0);
-            temp_mat = cell2mat_ov(template,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
-            fftTempMat = fftn(temp_mat);
-        end
-
         switch filetype
             case 'tif'
                 Yt = double(imread(Y,'Index',t,'Info',tiffInfo));
@@ -253,7 +226,7 @@ for it = 1:iter
                 if nd == 3; Yt = double(Y(:,:,:,t)); end
         end        
         minY = min(Yt(:));
-        maxY = max(Yt(:));        
+        maxY = max(Yt(:));
         Yt = Yt + add_value;
         ind = rem(t,bin_width) + bin_width*(rem(t,bin_width)==0);
         Yc = mat2cell_ov(Yt,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
@@ -362,7 +335,6 @@ for it = 1:iter
             Mf = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY) - add_value;
         end
         
-        %pix = (Mf==-add_value);
         Mf(Mf<minY) = minY;
         Mf(Mf>maxY) = maxY;
         
@@ -379,7 +351,35 @@ for it = 1:iter
                 if nd == 3; M_final.Y(:,:,:,t-rem_mem+1:t) = mem_buffer(:,:,:,1:rem_mem); end
                 M_final.Yr(:,t-rem_mem+1:t) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
             end            
-        end                        
+        end
+        
+        if mod(t,bin_width) == 0 && upd_template
+            disp(t)
+            cnt_buf = cnt_buf + 1;                
+            if strcmpi(method{2},'mean')
+                new_temp = cellfun(@(x) nanmean(x,nd+1), buffer, 'UniformOutput',false);
+            elseif strcmpi(method{2},'median');
+                new_temp = cellfun(@(x) nanmedian(x,nd+1), buffer, 'UniformOutput', false);
+            end
+            if strcmpi(method{1},'mean')
+                cnt = t/bin_width + 1;
+                template = cellfun(@plus, cellfun(@(x) x*(cnt-1)/cnt, template,'un',0), cellfun(@(x) x*1/cnt, new_temp,'un',0), 'un',0);
+            elseif strcmpi(method{1},'median');
+                if cnt_buf <= buffer_width
+                    if nd == 2; buffer_med(:,:,cnt_buf) = cell2mat_ov(new_temp,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
+                    if nd == 3; buffer_med(:,:,:,cnt_buf) = cell2mat_ov(new_temp,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
+                else
+                    buffer_med = circshift(buffer_med,[zeros(1,nd),-1]);
+                    if nd == 2; buffer_med(:,:,buffer_width) = cell2mat_ov(new_temp,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
+                    if nd == 3; buffer_med(:,:,:,buffer_width) = cell2mat_ov(new_temp,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
+                end
+                template = mat2cell_ov(nanmedian(buffer_med,nd+1),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
+            end
+            fftTemp = cellfun(@fftn, template, 'un',0);
+            temp_mat = cell2mat_ov(template,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
+            fftTempMat = fftn(temp_mat);
+        end        
+        
         if plot_flag && mod(t,1) == 0
             subplot(221); imagesc(Yt-add_value,[nnY,mmY]); title('Raw data','fontweight','bold','fontsize',14); 
                             xlabel(sprintf('Frame %i out of %i',t,T),'fontweight','bold','fontsize',14); set(gca,'Xtick',[],'Ytick',[]);

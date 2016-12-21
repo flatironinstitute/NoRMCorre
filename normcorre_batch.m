@@ -209,9 +209,11 @@ for it = 1:iter
         %buf = struct('Mf',cell(lY,1));
         parfor ii = 1:lY
             Yt = Ytc{ii};
+            minY = min(Yt(:));
+            maxY = max(Yt(:));
             Yc = mat2cell_ov(Yt,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
             fftY = cellfun(@fftn, Yc, 'un',0);
-        
+            
             M_fin = cell(length(xx_us),length(yy_us),length(zz_us)); %zeros(size(Y_temp));
             shifts_temp = zeros(length(xx_s),length(yy_s),length(zz_s),nd); 
             diff_temp = zeros(length(xx_s),length(yy_s),length(zz_s));
@@ -284,11 +286,10 @@ for it = 1:iter
             else            
                 Mf{ii} = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY) - add_value;
             end
+            Mf{ii}(Mf{ii}<minY)=minY;
+            Mf{ii}(Mf{ii}>maxY)=maxY;
         end
-%         buffer = buf{1};
-%         for ii = 2:lY
-%             buffer = cellfun(@(x,y) cat(nd+1,x,y),buffer,buf{ii},'un',0);
-%         end
+
         shifts_g(t:min(t+bin_width-1,T)) = shifts;
         Mf = cell2mat(Mf);
         
@@ -318,6 +319,11 @@ for it = 1:iter
             elseif strcmpi(method{2},'median');
                 new_temp = cellfun(@(x) nanmedian(x,nd+1), buffer, 'UniformOutput', false);
             end
+            if any(reshape(cell2mat(cellfun(@(x) any(isnan(x(:))), new_temp, 'un',0)),[],1))
+            parfor i = 1:numel(new_temp)
+                new_temp{i}(isnan(new_temp{i})) =  template{i}(isnan(new_temp{i}));
+            end
+            end
             if strcmpi(method{1},'mean')
                 cnt = t/bin_width + 1;
                 template = cellfun(@plus, cellfun(@(x) x*(cnt-1)/cnt, template,'un',0), cellfun(@(x) x*1/cnt, new_temp,'un',0), 'un',0);
@@ -333,9 +339,6 @@ for it = 1:iter
                 template = mat2cell_ov(nanmedian(buffer_med,nd+1),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
             end
             temp_mat = cell2mat_ov(template,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
-            temp_mat(isnan(temp_mat)) = template_in(isnan(temp_mat));
-            template_in = temp_mat;
-            template = mat2cell_ov(temp_mat,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
             fftTemp = cellfun(@fftn, template, 'un',0);            
             fftTempMat = fftn(temp_mat);
         end
