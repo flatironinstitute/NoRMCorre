@@ -25,10 +25,17 @@ The ```options``` struct can be set either manually or by using the function ```
 | ```bin_width``` | length of bin over which the registered frames are averaged to update the template |
 | ```iter``` | numeber of times to go over the dataset |
 
+The performance of registration can be evaluated using the function ```motion_metrics.m```. The function simply computes the correlation coefficient of each (registered) frame, with the mean (registered) frame across time.
 
 ## Developers
 
 [Eftychios A. Pnevmatikakis](https://github.com/epnev), Flatiron Institure, Simons Foundation
+
+## External packages
+
+This package includes functions from the following packages
+- [Save and load a multipage tiff file](https://www.mathworks.com/matlabcentral/fileexchange/35684-save-and-load-a-multiframe-tiff-image/content/loadtiff.m)
+- [Savefast](https://www.mathworks.com/matlabcentral/fileexchange/39721-save-mat-files-more-quickly) for saving (and then loading) MAT files more quickly without compressing their contents. 
 
 ## Integrations 
 
