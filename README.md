@@ -9,9 +9,9 @@ The algorithm operates by splitting the field of view into a set of overlapping 
 
 ## Code details
 
-See the function ```demo.m``` for an example of the code. The algorithm is implemented in the function ```online_motion_correction_patches.m```. The user gives a dataset (either as 3D or 4D tensor loaded in RAM or memory mapped, or a pointer to a .tiff stack or .hdf5 file), and a parameters struct ```options```. Optionally, an initial template can also be given.
+See the function ```demo.m``` for an example of the code. The algorithm is implemented in the function ```normcorre.m```. If you have access to the parallel computing toolbox, then the function ```normcorre_batch.m``` can offer speed gains by enabling within mini-batch parallel processing. The user gives a dataset (either as 3D or 4D tensor loaded in RAM or memory mapped, or a pointer to a .tiff stack or .hdf5 file), and a parameters struct ```options```. Optionally, an initial template can also be given.
 
-The most important parameters of the ```options``` struct are the following:
+The ```options``` struct can be set either manually or by using the function ```NoRMCorreSetParms.m```. The most important parameters of the ```options``` struct are the following:
 
 | Parameter name | Description |
 |----------------|-------------|
@@ -21,8 +21,10 @@ The most important parameters of the ```options``` struct are the following:
 | ```overlap_post ``` | size of overlapping region in each direction after upsampling |
 | ```max_shift``` | maximum allowed shift for rigid translation | 
 | ```max_dev``` | maximum deviation of each patch from estimated rigid translation |
+| ```upd_template``` | update the template after registering some frames |
 | ```bin_width``` | length of bin over which the registered frames are averaged to update the template |
 | ```iter``` | numeber of times to go over the dataset |
+
 
 ## Developers
 
