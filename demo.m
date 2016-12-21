@@ -1,7 +1,7 @@
 clear
-parpool;
+gcp;
 name = 'granule_love2.tif';
-Y = bigread2(name); % read the file (optional, you can also pass the path in the function instead of Y)
+tic; Y = bigread2(name); toc; % read the file (optional, you can also pass the path in the function instead of Y)
 Y = double(Y);      % convert to double precision 
 T = size(Y,ndims(Y));
 %Y = Y - min(Y(:));

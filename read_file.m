@@ -17,29 +17,8 @@ if nargin<2 || isempty(sframe); sframe = 1; end
 
 [~,~,ext] = fileparts(path_to_file);
 
-if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
-    
-    %get image info
-    tiffInfo = imfinfo(path_to_file);
-    T = length(tiffInfo);
-    if nargin < 3 || isempty(num2read); num2read = T - sframe + 1; end
-    num2read = min(num2read,T - sframe + 1);
-    
-    Y1 = imread(path_to_file,'Index',sframe,'Info',tiffInfo);
-    imData = zeros([size(Y1),num2read],'like',Y1);
-    nd = ndims(Y1);
-    if nd == 2
-        imData(:,:,1) = Y1;   
-        for t = sframe+1:sframe+num2read-1
-            imData(:,:,t) = imread(path_to_file,'Index',t,'Info',tiffInfo);
-        end
-    elseif nd == 3
-        imData(:,:,:,1) = Y1;   
-        for t = sframe+1:sframe+num2read-1
-            imData(:,:,:,t) = imread(path_to_file,'Index',t,'Info',tiffInfo);
-        end        
-    end
-    
+if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');    
+    imData = loadtiff(path_to_file);    
 elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
     info = hdf5info(path_to_file);
     dims = info.GroupHierarchy.Datasets.Dims;

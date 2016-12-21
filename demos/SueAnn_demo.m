@@ -1,16 +1,7 @@
 clear;
 name = '/Users/epnevmatikakis/Documents/Ca_datasets/Sueann/k56_20160608_RSM_125um_41mW_zoom2p2_00001_00034.tif';
 addpath(genpath('../../NoRMCorre'));
-tiffInfo = imfinfo(name);
-T = length(tiffInfo);
-Y1 = imread(name,'Index',1,'Info',tiffInfo);
-Y = zeros([size(Y1),T]);
-Y(:,:,1) = double(Y1);
-tic;
-for t = 2:T
-    Y(:,:,t) = double(imread(name,'Index',t,'Info',tiffInfo));
-end
-toc
+Y = read_file(name);
 
 %% set parameters (first try out rigid motion correction)
 
