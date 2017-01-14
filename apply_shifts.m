@@ -19,7 +19,7 @@ if nargin < 4 || isempty(td1); td1 = 0; end
 T = length(shifts);
 
 sizY = size(Y);
-if sizY(end) == T
+if sizY(end) == T && T > 1
     flag_constant = false;
     nd = length(sizY)-1;   
     sizY = sizY(1:end-1);
@@ -41,7 +41,7 @@ xx_uf = xx_uf + td1; xx_uf(end) = d1;
 yy_uf = yy_uf + td2; yy_uf(end) = d2;
 zz_uf = zz_uf + td3; zz_uf(end) = d3;
 
-M_fin = mat2cell_ov(zeros(d1,d2,d3),xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
+M_fin = mat2cell_ov(zeros(d1,d2,d3,'single'),xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
 temp_cell = M_fin;
 Nr = cell(size(temp_cell));
 Nc = cell(size(temp_cell));
@@ -72,17 +72,18 @@ if flag_constant;
 end
 bin_width = options.bin_width;
 for t = 1:bin_width:T
-    if nd == 2; Ytm = double(Y(:,:,t:min(t+bin_width-1,T))); end
-    if nd == 3; Ytm = double(Y(:,:,:,t:min(t+bin_width-1,T))); end
-
-    Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,ndims(Ytm))));
+    if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
+    if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
+    if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,3))); end
+    if nd == 3; Ytc = mat2cell(Ytm,d1,d2,d3,ones(1,size(Ytm,4))); end
+    
     Mf = cell(size(Ytc));
     lY = length(Ytc);
     shifts_temp = shifts(t:t+lY-1);
     
     %buffer = cell(length(xx_us),length(yy_us),length(zz_us),size(Ytm,ndims(Ytm)));
     %shifts = struct('shifts',cell(lY,1),'shifts_up',cell(lY,1),'diff',cell(lY,1));
-    parfor ii = 1:lY        
+    for ii = 1:lY        
         shifts_temp(ii).diff(:) = 0;
         if ~flag_constant            
             Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
@@ -101,7 +102,6 @@ for t = 1:bin_width:T
                     end
                 end
             end
-
             gx = max(abs(reshape(diff(shifts_up,[],1),[],1)));
             gy = max(abs(reshape(diff(shifts_up,[],2),[],1)));
             gz = max(abs(reshape(diff(shifts_up,[],3),[],1)));
