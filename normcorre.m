@@ -41,7 +41,7 @@ elseif isobject(Y);
     T = sizY(end);
 else % array loaded in memory
     filetype = 'mat';
-    Y = double(Y);
+    Y = single(Y);
     sizY = size(Y);
     T = sizY(end);
 end
@@ -132,7 +132,7 @@ switch filetype
     case 'mat'
         if nd == 2; Y_temp = Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y(:,:,:,1:init_batch); end
 end
-Y_temp = double(Y_temp);
+Y_temp = single(Y_temp);
 
 if nargin < 3 || isempty(template)
     template_in = median(Y_temp,nd+1)+add_value;
@@ -174,8 +174,8 @@ template = mat2cell_ov(template_in,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,siz
 temp_mat = template_in;
 fftTemp = cellfun(@fftn,template,'un',0);
 fftTempMat = fftn(temp_mat);
-if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
-if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
+if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width,'single'),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
+if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width,'single'),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 
 if ~memmap
     M_final = zeros(size(Y));
@@ -184,8 +184,8 @@ else
     if nd == 2; M_final.Y(d1,d2,T) = single(0); end
     if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
     M_final.Yr(d1*d2*d3,T) = single(0);
-    if nd == 2; mem_buffer = zeros(d1,d2,options.mem_batch_size,'single'); end
-    if nd == 3; mem_buffer = zeros(d1,d2,d3,options.mem_batch_size,'single'); end
+    if nd == 2; mem_buffer = zeros(d1,d2,min(options.mem_batch_size,T),'single'); end
+    if nd == 3; mem_buffer = zeros(d1,d2,d3,min(options.mem_batch_size,T),'single'); end
 end
 %%
 if plot_flag
@@ -215,15 +215,15 @@ for it = 1:iter
     for t = 1:T
         switch filetype
             case 'tif'
-                Yt = double(imread(Y,'Index',t,'Info',tiffInfo));
+                Yt = single(imread(Y,'Index',t,'Info',tiffInfo));
             case 'hdf5'
-                Yt = double(h5read(Y,'/mov',[ones(1,length(sizY)-1),t],[sizY(1:end-1),1]));
+                Yt = single(h5read(Y,'/mov',[ones(1,length(sizY)-1),t],[sizY(1:end-1),1]));
             case 'mem'
-                if nd == 2; Yt = double(Y.Y(:,:,t)); end
-                if nd == 3; Yt = double(Y.Y(:,:,:,t)); end
+                if nd == 2; Yt = single(Y.Y(:,:,t)); end
+                if nd == 3; Yt = single(Y.Y(:,:,:,t)); end
             case 'mat'
-                if nd == 2; Yt = double(Y(:,:,t)); end
-                if nd == 3; Yt = double(Y(:,:,:,t)); end
+                if nd == 2; Yt = single(Y(:,:,t)); end
+                if nd == 3; Yt = single(Y(:,:,:,t)); end
         end        
         minY = min(Yt(:));
         maxY = max(Yt(:));
@@ -304,6 +304,7 @@ for it = 1:iter
             %if 
             if mot_uf(3) > 1
                 shifts_up = reshape(imresize(reshape(shifts_up,[length(xx_uf)*length(yy_uf),length(zz_f),nd]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf),nd]);
+                diff_up = reshape(imresize(reshape(diff_up,[length(xx_uf)*length(yy_uf),length(zz_f)]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf)]);
             end
             shifts(t).shifts_up = shifts_up;
             shifts(t).diff = diff_up;
