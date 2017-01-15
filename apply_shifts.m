@@ -41,8 +41,8 @@ xx_uf = xx_uf + td1; xx_uf(end) = d1;
 yy_uf = yy_uf + td2; yy_uf(end) = d2;
 zz_uf = zz_uf + td3; zz_uf(end) = d3;
 
-M_fin = mat2cell_ov(zeros(d1,d2,d3,'single'),xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
-temp_cell = M_fin;
+%M_fin = 
+temp_cell = mat2cell_ov(zeros(d1,d2,d3,'single'),xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
 Nr = cell(size(temp_cell));
 Nc = cell(size(temp_cell));
 Np = cell(size(temp_cell));
@@ -81,9 +81,9 @@ for t = 1:bin_width:T
     lY = length(Ytc);
     shifts_temp = shifts(t:t+lY-1);
     
-    %buffer = cell(length(xx_us),length(yy_us),length(zz_us),size(Ytm,ndims(Ytm)));
-    %shifts = struct('shifts',cell(lY,1),'shifts_up',cell(lY,1),'diff',cell(lY,1));
-    for ii = 1:lY        
+    parfor ii = 1:lY        
+        minY = min(Ytc{ii}(:));
+        maxY = max(Ytc{ii}(:));
         shifts_temp(ii).diff(:) = 0;
         if ~flag_constant            
             Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
@@ -91,9 +91,9 @@ for t = 1:bin_width:T
         end
         if all(options.mot_uf == 1)
             M_fin = shift_reconstruct(Yfft{1},shifts_temp(ii).shifts,shifts_temp(ii).diff,options.us_fac,Nr{1},Nc{1},Np{1},'NaN',0);
-            if nd == 2; Mf{ii} = M_fin; end
-            if nd == 3; Mf{ii} = M_fin; end
+            Mf{ii} = M_fin;
         else
+            M_fin = cell(length(xx_uf),length(yy_uf),length(zz_uf));
             shifts_up = shifts_temp(ii).shifts_up;
             for i = 1:length(xx_uf)
                 for j = 1:length(yy_uf)
@@ -111,8 +111,10 @@ for t = 1:bin_width:T
                 Mf{ii} = cell2mat_ov_sum(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,sizY,Bs);
             else            
                 Mf{ii} = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,sizY);
-            end    
+            end                
         end
+        Mf{ii}(Mf{ii}<minY) = minY;
+        Mf{ii}(Mf{ii}>maxY) = maxY;        
     end
     Mf = cell2mat(Mf);
     if nd == 2; I(:,:,t:min(t+bin_width-1,T)) = Mf; end
