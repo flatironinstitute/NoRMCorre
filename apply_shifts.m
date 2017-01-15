@@ -90,7 +90,7 @@ for t = 1:bin_width:T
             Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
         end
         if all(options.mot_uf == 1)
-            M_fin = shift_reconstruct2(Yfft{1},shifts_temp(ii).shifts,shifts_temp(ii).diff,options.us_fac,Nr{1},Nc{1},Np{1},'NaN',0);
+            M_fin = shift_reconstruct(Yfft{1},shifts_temp(ii).shifts,shifts_temp(ii).diff,options.us_fac,Nr{1},Nc{1},Np{1},'NaN',0);
             if nd == 2; Mf{ii} = M_fin; end
             if nd == 3; Mf{ii} = M_fin; end
         else
@@ -98,7 +98,7 @@ for t = 1:bin_width:T
             for i = 1:length(xx_uf)
                 for j = 1:length(yy_uf)
                     for k = 1:length(zz_uf)                  
-                         M_fin{i,j,k} = shift_reconstruct2(Yfft{i,j,k},shifts_up(i,j,k,:),shifts(t).diff(i,j,k),options.us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'NaN',0);
+                         M_fin{i,j,k} = shift_reconstruct(Yfft{i,j,k},shifts_up(i,j,k,:),shifts(t).diff(i,j,k),options.us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'NaN',0);
                     end
                 end
             end
