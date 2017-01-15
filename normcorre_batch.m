@@ -218,8 +218,8 @@ for it = 1:iter
             shifts_temp = zeros(length(xx_s),length(yy_s),length(zz_s),nd); 
             diff_temp = zeros(length(xx_s),length(yy_s),length(zz_s));
             if numel(M_fin) > 1      
-                if nd == 2; out_rig = dftregistration_max(fftTempMat,fftn(Yt),us_fac,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
-                if nd == 3; out_rig = dftregistration_max_3d(fftTempMat,fftn(Yt),us_fac,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
+                if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
+                if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
                 max_dev = max_dev_g;
             else
                 lb = -max_shift(1,nd);
