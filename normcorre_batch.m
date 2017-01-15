@@ -24,6 +24,7 @@ if isa(Y,'char')
         tiffInfo = imfinfo(Y);
         filetype = 'tif';
         T = length(tiffInfo);
+        sizY = [tiffInfo(1).Height,tiffInfo(1).Width,T];
     elseif strcmpi(ext,'mat')
         filetype = 'mem';
         Y = matfile(Y,'Writable',true);
@@ -119,9 +120,9 @@ end
 
 switch filetype
     case 'tif'
-        Y_temp = double(bigread2(Y,1,init_batch));
+        Y_temp = single(bigread2(Y,1,init_batch));
     case 'hdf5'
-        Y_temp = double(bigread2(Y,1,init_batch));        
+        Y_temp = single(bigread2(Y,1,init_batch));        
     case 'mem'
         if nd == 2; Y_temp = double(Y.Y(:,:,1:init_batch)); elseif nd == 3; Y_temp = double(Y.Y(:,:,:,1:init_batch)); end
     case 'mat'
@@ -172,7 +173,7 @@ if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s
 if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 
 if ~memmap
-    M_final = zeros(size(Y));
+    M_final = zeros([sizY,T]);
 else
     M_final = matfile(filename,'Writable',true);
     if nd == 2; M_final.Y(d1,d2,T) = single(0); end
@@ -190,15 +191,18 @@ for it = 1:iter
     for t = 1:bin_width:T
         switch filetype
             case 'tif'
-                Ytm = double(imread(Y,'Index',t,'Info',tiffInfo));
+                Ytm = zeros(sizY(1),sizY(2),min(t+bin_width-1,T)-t+1,'single');
+                for tt = 1:min(t+bin_width-1,T)-t+1
+                    Ytm(:,:,tt) = single(imread(Y,'Index',t+tt-1,'Info',tiffInfo));
+                end
             case 'hdf5'
-                Ytm = double(h5read(Y,'/mov',[ones(1,length(sizY)-1),t],[sizY(1:end-1),1]));
+                Ytm = single(h5read(Y,'/mov',[ones(1,length(sizY)-1),t],[sizY(1:end-1),1]));
             case 'mem'
-                if nd == 2; Ytm = double(Y.Y(:,:,t:min(t+bin_width-1,T))); end
-                if nd == 3; Ytm = double(Y.Y(:,:,:,t:min(t+bin_width-1,T))); end
+                if nd == 2; Ytm = single(Y.Y(:,:,t:min(t+bin_width-1,T))); end
+                if nd == 3; Ytm = single(Y.Y(:,:,:,t:min(t+bin_width-1,T))); end
             case 'mat'
-                if nd == 2; Ytm = double(Y(:,:,t:min(t+bin_width-1,T))); end
-                if nd == 3; Ytm = double(Y(:,:,:,t:min(t+bin_width-1,T))); end
+                if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
+                if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
         end
         
         if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,ndims(Ytm)))); end
@@ -310,7 +314,7 @@ for it = 1:iter
         end    
         
         % update template
-        disp(t)
+        fprintf('%i out of %i frames registered, iteration %i out of %i \n',t+lY-1,T,it,iter)
         if upd_template
             cnt_buf = cnt_buf + 1;
             if nd == 2; buffer = mat2cell_ov(Mf,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end

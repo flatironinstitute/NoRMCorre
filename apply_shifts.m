@@ -16,9 +16,33 @@ if nargin < 6 || isempty(td3); td3 = 0; end
 if nargin < 5 || isempty(td2); td2 = 0; end
 if nargin < 4 || isempty(td1); td1 = 0; end
 
+if isa(Y,'char')
+    [~,~,ext] = fileparts(Y);
+    ext = ext(2:end);
+    if strcmpi(ext,'tif') || strcmpi(ext,'tiff');
+        tiffInfo = imfinfo(Y);
+        sizY = [tiffInfo(1).Height,tiffInfo(1).Width,length(tiffInfo)];
+        filetype = 'tif';
+    elseif strcmpi(ext,'mat')
+        filetype = 'mem';
+        Y = matfile(Y,'Writable',true);
+        sizY = size(Y);
+    elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5');
+        filetype = 'hdf5';
+        fileinfo = hdf5info(Y);
+        sizY = fileinfo.GroupHierarchy.Datasets.Dims;
+    end    
+elseif isobject(Y);
+    filetype = 'mem';
+    sizY = size(Y,'Y');
+else % array loaded in memory
+    filetype = 'mat';
+    Y = single(Y);
+    sizY = size(Y);
+end
+
 T = length(shifts);
 
-sizY = size(Y);
 if sizY(end) == T && T > 1
     flag_constant = false;
     nd = length(sizY)-1;   
@@ -27,9 +51,8 @@ else
     flag_constant = true;
     nd = length(sizY);
 end
-
-[d1,d2,d3] = size(Y);
-if nd == 2; d3 = 1; end
+d1 = sizY(1); d2 = sizY(2);
+if nd == 2; d3 = 1; else d3 = sizY(3); end
 
 %% precompute some quantities that are used repetitively for template matching and applying shifts
 
@@ -72,8 +95,24 @@ if flag_constant;
 end
 bin_width = options.bin_width;
 for t = 1:bin_width:T
-    if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
-    if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
+    switch filetype
+        case 'tif'
+            Ytm = zeros(sizY(1),sizY(2),min(t+bin_width-1,T)-t+1,'single');
+            for tt = 1:min(t+bin_width-1,T)-t+1
+                Ytm(:,:,tt) = single(imread(Y,'Index',t+tt-1,'Info',tiffInfo));
+            end
+        case 'hdf5'
+            Ytm = double(h5read(Y,'/mov',[ones(1,length(sizY)-1),t],[sizY(1:end-1),1]));
+        case 'mem'
+            if nd == 2; Ytm = single(Y.Y(:,:,t:min(t+bin_width-1,T))); end
+            if nd == 3; Ytm = single(Y.Y(:,:,:,t:min(t+bin_width-1,T))); end
+        case 'mat'
+            if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
+            if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
+    end
+    
+%     if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
+%     if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
     if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,3))); end
     if nd == 3; Ytc = mat2cell(Ytm,d1,d2,d3,ones(1,size(Ytm,4))); end
     

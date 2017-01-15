@@ -355,7 +355,7 @@ for it = 1:iter
         end
         
         if mod(t,bin_width) == 0 && upd_template
-            disp(t)
+            fprintf('%i out of %i frames registered, iteration %i out of %i \n',t,T,it,iter)
             cnt_buf = cnt_buf + 1;                
             if strcmpi(method{2},'mean')
                 new_temp = cellfun(@(x) nanmean(x,nd+1), buffer, 'UniformOutput',false);
