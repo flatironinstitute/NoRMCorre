@@ -2,8 +2,8 @@ clear;
 name1 = '/Users/epnevmatikakis/Documents/Ca_datasets/Zemla/243SP_dendrites_odorA.hdf5';
 name2 = '/Users/epnevmatikakis/Documents/Ca_datasets/Zemla/243SP_dendrites_odorB.hdf5';
 
-Y1 = bigread2(name1);
-Y2 = bigread2(name2);
+Y1 = read_file(name1);
+Y2 = read_file(name2);
 
 %% reshape data into 3d
 [d1,d2,~] = size(Y1);
@@ -16,45 +16,45 @@ Y = cat(4,Y1,Y2);
 T = size(Y,4);
 
 %% motion correction
-
-options.grid_size = [d1,d2,d3];              % size of patch in each direction
-options.bin_width = 50;                     % number of bins after which you update template
-options.mot_uf = 1;[4,4,1];                   % upsampling factor for smaller patches
-options.us_fac = 8;                         % upsampling factor for subpixel registration
-options.method = {'median','mean'};         % averaging method for computing and updating templates
-options.overlap_pre = 16;                   % amount of overlap for each patch
-options.overlap_post = 16;                  % amount of overlap for each patch
-options.iter = 1;                           % number of passes (set to 1 for one-pass online processing)
-options.plot_flag = false;                  % flag for plotting results while correcting
-options.memmap = false;                     % save output in a .mat file
-options.make_avi = false;                   % make a movie showing the results
-options.fr = 15;                            % frame rate for movie
-options.filename = 'roland1.mat';
-options.use_parallel = false;
+options = NoRMCorreSetParms('d1',d1,'d2',d2,'d3',d3,'grid_size',[d1,d2,d3],'bin_width',50,'mot_uf',[4,4,1],...
+            'us_fac',50,'overlap_pre',16,'overlap_post',16);
+% options.grid_size = [d1,d2,d3];              % size of patch in each direction
+% options.bin_width = 50;                     % number of bins after which you update template
+% options.mot_uf = 1;[4,4,1];                   % upsampling factor for smaller patches
+% options.us_fac = 8;                         % upsampling factor for subpixel registration
+% options.method = {'median','mean'};         % averaging method for computing and updating templates
+% options.overlap_pre = 16;                   % amount of overlap for each patch
+% options.overlap_post = 16;                  % amount of overlap for each patch
+% options.iter = 1;                           % number of passes (set to 1 for one-pass online processing)
+% options.plot_flag = false;                  % flag for plotting results while correcting
+% options.memmap = false;                     % save output in a .mat file
+% options.make_avi = false;                   % make a movie showing the results
+% options.fr = 15;                            % frame rate for movie
+% options.filename = 'roland1.mat';
+% options.use_parallel = false;
 %options.name = [name,'_corrected.avi'];     % name for movie
 
 %% rigid motion correction
 perm = randperm(T);
 Y = Y(:,:,:,perm);
 tt1 = tic;
-[M1,shifts1,template1] = online_motion_correction_patches(Y,options);
+[M1,shifts1,template1] = normcorre(Y,options);
 toc(tt1)
 M1(:,:,:,perm) = M1;
 shifts1(perm)  = shifts1;
 
 %% non rigid motion correction 
 
-options.grid_size = [128,128,d3];              % size of patch in each direction
-options.bin_width = 50;                     % number of bins after which you update template
-options.mot_uf = [4,4,1];                   % upsampling factor for smaller patches
-options.overlap_post = [16,16,2];
+options_nr = NoRMCorreSetParms('d1',d1,'d2',d2,'d3',d3,'grid_size',[128,128,d3],'bin_width',50,'mot_uf',[4,4,1],...
+            'us_fac',50,'overlap_pre',16,'overlap_post',[16,16,2]);
 
 tt1 = tic;
-[M2,shifts2,template2] = online_motion_correction_patches(Y,options);
+[M2,shifts2,template2] = normcorre(Y,options_nr);
 toc(tt1)
 M2(:,:,:,perm) = M2;
 Y(:,:,:,perm) = Y;
 shifts2(perm)  = shifts2;
+
 %% evaluate motion correction
 
 [cY,mY,vY] = motion_metrics(Y,[10,10,10,10,0,0]);

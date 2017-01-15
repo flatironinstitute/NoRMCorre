@@ -201,7 +201,8 @@ for it = 1:iter
                 if nd == 3; Ytm = double(Y(:,:,:,t:min(t+bin_width-1,T))); end
         end
         
-        Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,ndims(Ytm))));
+        if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,ndims(Ytm)))); end
+        if nd == 3; Ytc = mat2cell(Ytm,d1,d2,d3,ones(1,size(Ytm,ndims(Ytm)))); end
         Mf = cell(size(Ytc));
         lY = length(Ytc);
         %buffer = cell(length(xx_us),length(yy_us),length(zz_us),size(Ytm,ndims(Ytm)));
