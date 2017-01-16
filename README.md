@@ -36,6 +36,7 @@ The performance of registration can be evaluated using the function ```motion_me
 This package includes functions from the following packages
 - [Save and load a multipage tiff file](https://www.mathworks.com/matlabcentral/fileexchange/35684-save-and-load-a-multiframe-tiff-image/content/loadtiff.m)
 - [Savefast](https://www.mathworks.com/matlabcentral/fileexchange/39721-save-mat-files-more-quickly) for saving (and then loading) MAT files more quickly without compressing their contents. 
+- [Eficient subpixel registration by cross-correlation](https://www.mathworks.com/matlabcentral/fileexchange/18401-efficient-subpixel-image-registration-by-cross-correlation) for fast alignment of an image against a template.
 
 ## Integrations 
 
