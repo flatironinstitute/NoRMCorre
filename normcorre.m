@@ -178,7 +178,7 @@ if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width,'single'),xx_s,xx_f,yy_s,
 if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width,'single'),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 
 if ~memmap
-    M_final = zeros(size(Y));
+    M_final = zeros(sizY);
 else
     M_final = matfile(filename,'Writable',true);
     if nd == 2; M_final.Y(d1,d2,T) = single(0); end
