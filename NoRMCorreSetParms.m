@@ -38,6 +38,10 @@ Names = [
     'make_avi           ' % flag for making movie (default: false)
     'name               ' % name for movie (default: 'motion_corrected.avi')
     'fr                 ' % frame rate for movie (default: 30)
+    % output type
+    'output_type        ' % 'mat' (load in memory), 'memmap', 'tiff', 'hdf5', 'bin' (default:mat)
+    'h5_groupname       ' % name for hdf5 dataset (default: 'mov')
+    'h5_filename        ' % name for hdf5 saved file (default: 'motion_corrected.h5')
    ]; 
    
 [m,n] = size(Names);
@@ -149,6 +153,10 @@ Values = [
     {false}               % flag for making movie (default: false)
     {'motion_corrected.avi'} % name for movie (default: 'motion_corrected.avi')
     {30} % frame rate for movie (default: 30)   
+    % output_type    
+    {'mat'}
+    {'mov'}
+    {'motion_corrected.h5'}
     ];
 
 for j = 1:m

@@ -1,4 +1,4 @@
-function [M_final,shifts_g,template] = normcorre_batch(Y,options,template)
+function [M_final,shifts_g,template] = normcorre_batch2(Y,options,template)
 
 % online motion correction through DFT subpixel registration
 % Based on the dftregistration.m function from Manuel Guizar and Jim Fienup
@@ -333,7 +333,22 @@ for it = 1:iter
                     if nd == 2; h5write(options.h5_filename,['/',options.h5_groupname],mem_buffer(:,:,1:rem_mem),[ones(1,nd),t+lY-rem_mem],[sizY(1:nd),rem_mem]); end
                     if nd == 3; h5write(options.h5_filename,['/',options.h5_groupname],mem_buffer(:,:,:,1:rem_mem),[ones(1,nd),t+lY-rem_mem],[sizY(1:nd),rem_mem]); end
                 end
-        end        
+        end
+        
+%         if ~memmap
+%             if nd == 2; M_final(:,:,t:min(t+bin_width-1,T)) = Mf; end
+%             if nd == 3; M_final(:,:,:,t:min(t+bin_width-1,T)) = Mf; end
+%         else
+%             rem_mem = rem(t+lY-1,options.mem_batch_size);
+%             if rem_mem == 0; rem_mem = options.mem_batch_size; end
+%             if nd == 2; mem_buffer(:,:,rem_mem-lY+1:rem_mem) = single(Mf); end
+%             if nd == 3; mem_buffer(:,:,:,rem_mem-lY+1:rem_mem) = single(Mf); end
+%             if rem_mem == options.mem_batch_size || t+lY-1 == T
+%                 if nd == 2; M_final.Y(:,:,t+lY-rem_mem:t+lY-1) = mem_buffer(:,:,1:rem_mem); end
+%                 if nd == 3; M_final.Y(:,:,:,t+lY-rem_mem:t+lY-1) = mem_buffer(:,:,:,1:rem_mem); end
+%                 M_final.Yr(:,t+lY-rem_mem:t+lY-1) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
+%             end 
+%         end    
         
         % update template
         fprintf('%i out of %i frames registered, iteration %i out of %i \n',t+lY-1,T,it,iter)

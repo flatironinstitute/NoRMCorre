@@ -52,7 +52,7 @@ nd = length(sizY)-1;                          % determine whether imaging is 2d 
 sizY = sizY(1:nd);
 %% set default parameters if not present
 
-defoptions.memmap = false;                     % save motion corrected file in a mat file
+defoptions.memmap = true;                     % save motion corrected file in a mat file
 if nd == 2
     defoptions.grid_size = [128,128,1];       % size of each patch to be corrected separately
 elseif nd == 3
@@ -173,30 +173,17 @@ fftTempMat = fftn(temp_mat);
 if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 
-if ~strcmpi(options.output_type,'mat')
-    options.mem_batch_size = min(round(options.mem_batch_size/bin_width)*bin_width,T);
+if ~memmap
+    M_final = zeros([sizY,T]);
+else
+    M_final = matfile(filename,'Writable',true);
+    if nd == 2; M_final.Y(d1,d2,T) = single(0); end
+    if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
+    M_final.Yr(d1*d2*d3,T) = single(0);
+    options.mem_batch_size = round(options.mem_batch_size/bin_width)*bin_width;
     if nd == 2; mem_buffer = zeros(d1,d2,options.mem_batch_size,'single'); end
-    if nd == 3; mem_buffer = zeros(d1,d2,d3,options.mem_batch_size,'single'); end
+    if nd == 3; mem_buffer = zeros(d1,d2,d3,options.mem_batch_size,'single'); end    
 end
-
-switch lower(options.output_type)
-    case 'mat'
-        M_final = zeros([sizY,T]);
-    case 'memmap'
-        M_final = matfile(filename,'Writable',true);
-        if nd == 2; M_final.Y(d1,d2,T) = single(0); end
-        if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
-        M_final.Yr(d1*d2*d3,T) = single(0);        
-    case {'hdf5','h5'}
-        M_final = ['motion corrected file has been saved as ', options.h5_filename];
-        if nd == 2
-            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype','single');
-        elseif nd == 3
-            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype','single');
-        end
-    otherwise
-        error('This filetype is currently not supported')
-end   
 
 cnt_buf = 0;
 fprintf('Template initialization complete. \n')
@@ -312,28 +299,20 @@ for it = 1:iter
         shifts_g(t:min(t+bin_width-1,T)) = shifts;
         Mf = cell2mat(Mf);
         
-        if ~strcmpi(options.output_type,'mat')
+        if ~memmap
+            if nd == 2; M_final(:,:,t:min(t+bin_width-1,T)) = Mf; end
+            if nd == 3; M_final(:,:,:,t:min(t+bin_width-1,T)) = Mf; end
+        else
             rem_mem = rem(t+lY-1,options.mem_batch_size);
-            if rem_mem == 0; rem_mem = options.mem_batch_size; end            
+            if rem_mem == 0; rem_mem = options.mem_batch_size; end
             if nd == 2; mem_buffer(:,:,rem_mem-lY+1:rem_mem) = single(Mf); end
             if nd == 3; mem_buffer(:,:,:,rem_mem-lY+1:rem_mem) = single(Mf); end
-        end
-        switch lower(options.output_type)
-            case 'mat'
-                if nd == 2; M_final(:,:,t:min(t+bin_width-1,T)) = Mf; end
-                if nd == 3; M_final(:,:,:,t:min(t+bin_width-1,T)) = Mf; end
-            case 'memmap'
-                if rem_mem == options.mem_batch_size || t+lY-1 == T
-                    if nd == 2; M_final.Y(:,:,t+lY-rem_mem:t+lY-1) = mem_buffer(:,:,1:rem_mem); end
-                    if nd == 3; M_final.Y(:,:,:,t+lY-rem_mem:t+lY-1) = mem_buffer(:,:,:,1:rem_mem); end
-                    M_final.Yr(:,t+lY-rem_mem:t+lY-1) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
-                end      
-            case {'hdf5','h5'}
-                if rem_mem == options.mem_batch_size || t+lY-1 == T
-                    if nd == 2; h5write(options.h5_filename,['/',options.h5_groupname],mem_buffer(:,:,1:rem_mem),[ones(1,nd),t+lY-rem_mem],[sizY(1:nd),rem_mem]); end
-                    if nd == 3; h5write(options.h5_filename,['/',options.h5_groupname],mem_buffer(:,:,:,1:rem_mem),[ones(1,nd),t+lY-rem_mem],[sizY(1:nd),rem_mem]); end
-                end
-        end        
+            if rem_mem == options.mem_batch_size || t+lY-1 == T
+                if nd == 2; M_final.Y(:,:,t+lY-rem_mem:t+lY-1) = mem_buffer(:,:,1:rem_mem); end
+                if nd == 3; M_final.Y(:,:,:,t+lY-rem_mem:t+lY-1) = mem_buffer(:,:,:,1:rem_mem); end
+                M_final.Yr(:,t+lY-rem_mem:t+lY-1) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
+            end 
+        end    
         
         % update template
         fprintf('%i out of %i frames registered, iteration %i out of %i \n',t+lY-1,T,it,iter)

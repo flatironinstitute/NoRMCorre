@@ -10,3 +10,5 @@ dftregistration.m
 *.zip
 
 *.tif
+
+*.h5
