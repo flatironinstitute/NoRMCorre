@@ -1,6 +1,17 @@
 clear
 gcp;
+
 name = 'granule_love2.tif';
+if ~exist(name,'file')  % download file if it doesn't exist in the directory
+    url = 'https://www.dropbox.com/s/mjmtwn4pdgydkny/granule_love2.tif.zip?dl=1';
+    filename = 'granule_love2.tif.zip';
+    fprintf('downloading the file...');
+    outfilename = websave(filename,url);
+    fprintf('...done. Now unzipping...')
+    unzip(filename);
+    fprintf('done.');
+end
+
 tic; Y = loadtiff(name); toc; % read the file (optional, you can also pass the path in the function instead of Y)
 Y = double(Y);      % convert to double precision 
 T = size(Y,ndims(Y));
