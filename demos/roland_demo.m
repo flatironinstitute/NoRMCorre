@@ -45,11 +45,11 @@ shifts1(perm)  = shifts1;
 
 %% non rigid motion correction 
 
-options_nr = NoRMCorreSetParms('d1',d1,'d2',d2,'d3',d3,'grid_size',[128,128,d3],'bin_width',50,'mot_uf',[4,4,1],...
-            'us_fac',50,'overlap_pre',16,'overlap_post',[16,16,2]);
+options_nr = NoRMCorreSetParms('d1',d1,'d2',d2,'d3',d3,'grid_size',[64,64,3],'bin_width',50,'mot_uf',[4,4,1],...
+            'us_fac',50,'overlap_pre',32,'overlap_post',[16,16,2]);
 
 tt1 = tic;
-[M2,shifts2,template2] = normcorre(Y,options_nr);
+[M2,shifts2,template2] = normcorre_batch(Y,options_nr);
 toc(tt1)
 M2(:,:,:,perm) = M2;
 Y(:,:,:,perm) = Y;
@@ -60,10 +60,18 @@ shifts2(perm)  = shifts2;
 [cY,mY,vY] = motion_metrics(Y,[10,10,10,10,0,0]);
 [cM1,mM1,vM1] = motion_metrics(M1,[10,10,10,10,0,0]);
 [cM2,mM2,vM2] = motion_metrics(M2,[10,10,10,10,0,0]);
-
 figure;scatter(cY,cM1); hold on; plot([.5,.7],[.5,.7],'--r')
 figure;scatter(cM1,cM2); hold on; plot([.5,.7],[.5,.7],'--r')
 
+%%
+M3 = permute(zeros(size(M2),'single'),[1,2,4,3]);
+mM3 = cell(6,1);
+for i = 1:6
+    [M3(:,:,:,i),mM3{i}] = normcorre_batch(squeeze(Y(:,:,i,:)),options_nr);
+end
+%%
+M3 = permute(M3,[1,2,4,3]);
+[cM3,mM3,vM3] = motion_metrics(M3,[10,10,10,10,0,0]);
 %% view a plane
 
 pl = 1;randi(d3);

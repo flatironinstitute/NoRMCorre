@@ -80,13 +80,13 @@ else
     end
 end    
 
-    if ismatrix(mY);
-        [gx,gy] = gradient(mY); 
-        ng = norm(sqrt(gx.^2+gy.^2),'fro');
-    elseif ndims(Y) == 3;
-        [gx,gy,gz] = gradient(mY); 
-        ng = sqrt(sum(gx(:).^2+gy(:).^2+gz(:).^2));
-    end
+if ismatrix(mY);
+    [gx,gy] = gradient(mY); 
+    ng = norm(sqrt(gx.^2+gy.^2),'fro');
+elseif ndims(Y)-1 == 3;
+    [gx,gy,gz] = gradient(mY); 
+    ng = sqrt(sum(gx(:).^2+gy(:).^2+gz(:).^2));
+end
 
     function y_temp = load_data(X,t,batch_size)
         lY = min(T-t+1,batch_size);
