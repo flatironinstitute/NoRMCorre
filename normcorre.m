@@ -50,7 +50,7 @@ nd = length(sizY)-1;                          % determine whether imaging is 2d 
 sizY = sizY(1:nd);
 %% set default parameters if not present
 
-defoptions.memmap = true;                     % save motion corrected file in a mat file
+defoptions.memmap = false;                     % save motion corrected file in a mat file
 if nd == 2
     defoptions.grid_size = [128,128,1];       % size of each patch to be corrected separately
 elseif nd == 3
@@ -169,7 +169,7 @@ end
 if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
 
 %%
-maxNumCompThreads(2);
+%maxNumCompThreads(2);
 template = mat2cell_ov(template_in,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
 temp_mat = template_in;
 fftTemp = cellfun(@fftn,template,'un',0);
@@ -179,7 +179,7 @@ if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width,'single'),xx_s,xx_f,yy
 
 
 if ~strcmpi(options.output_type,'mat')
-    options.mem_batch_size = min(round(options.mem_batch_size/bin_width)*bin_width,T);
+    %options.mem_batch_size = min(round(options.mem_batch_size/bin_width)*bin_width,T);
     if nd == 2; mem_buffer = zeros(d1,d2,options.mem_batch_size,'single'); end
     if nd == 3; mem_buffer = zeros(d1,d2,d3,options.mem_batch_size,'single'); end
 end

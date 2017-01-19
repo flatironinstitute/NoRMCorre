@@ -174,7 +174,7 @@ if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s
 if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 
 if ~strcmpi(options.output_type,'mat')
-    options.mem_batch_size = min(round(options.mem_batch_size/bin_width)*bin_width,T);
+    options.mem_batch_size = max(min(round(options.mem_batch_size/bin_width)*bin_width,T),1);
     if nd == 2; mem_buffer = zeros(d1,d2,options.mem_batch_size,'single'); end
     if nd == 3; mem_buffer = zeros(d1,d2,d3,options.mem_batch_size,'single'); end
 end
