@@ -121,7 +121,7 @@ for t = 1:bin_width:T
     lY = length(Ytc);
     shifts_temp = shifts(t:t+lY-1);
     
-    parfor ii = 1:lY        
+    for ii = 1:lY        
         minY = min(Ytc{ii}(:));
         maxY = max(Ytc{ii}(:));
         shifts_temp(ii).diff(:) = 0;
