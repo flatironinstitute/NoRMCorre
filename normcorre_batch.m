@@ -121,7 +121,10 @@ end
 
 switch filetype
     case 'tif'
-        Y_temp = single(bigread2(Y,1,init_batch));
+        Y_temp = zeros(sizY(1),sizY(2),init_batch,'single');
+        for tt = 1:init_batch
+            Y_temp(:,:,tt) = single(imread(Y,'Index',tt,'Info',tiffInfo));
+        end
     case 'hdf5'
         Y_temp = single(bigread2(Y,1,init_batch));        
     case 'mem'
