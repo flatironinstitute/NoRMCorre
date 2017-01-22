@@ -147,7 +147,7 @@ Values = [
     {false}               % for each frame, update patches in parallel (default: false)
     {false}               % flag for saving memory mapped motion corrected file (default: false)
     {'motion_corrected.mat'} % name for memory mapped file (default: 'motion_corrected.mat')
-    {5000}                % batch size used during memory mapping for faster mapping
+    {1000}                % batch size used during memory mapping for faster mapping
     % plotting
     {false}               % flag for plotting results in real time (default: false)
     {false}               % flag for making movie (default: false)

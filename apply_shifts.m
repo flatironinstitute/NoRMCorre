@@ -1,4 +1,4 @@
-function I = apply_shifts(Y,shifts,options,td1,td2,td3)
+function M_final = apply_shifts(Y,shifts,options,td1,td2,td3)
 
 % apply shifts using fft interpolation
 
@@ -86,16 +86,34 @@ for i = 1:length(xx_us)
 end
 if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
 
-if nd == 2; I = zeros(d1,d2,T); end
-if nd == 3; I = zeros(d1,d2,d3,T); end
+switch lower(options.output_type)
+    case 'mat'
+        M_final = zeros([sizY(1:nd),T]);
+    case 'memmap'
+        M_final = matfile(options.mem_filename,'Writable',true);
+        if nd == 2; M_final.Y(d1,d2,T) = single(0); end
+        if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
+        M_final.Yr(d1*d2*d3,T) = single(0);        
+    case {'hdf5','h5'}
+        M_final = ['motion corrected file has been saved as ', options.h5_filename];
+        if nd == 2
+            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype','single');
+        elseif nd == 3
+            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype','single');
+        end
+    otherwise
+        error('This filetype is currently not supported')
+end 
+
 
 %%
 if flag_constant;  
     Yc = mat2cell_ov(Y,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
     Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
 end
-bin_width = options.bin_width;
+bin_width = options.mem_batch_size;
 for t = 1:bin_width:T
+    tt1 = tic;
     switch filetype
         case 'tif'
             Ytm = zeros(sizY(1),sizY(2),min(t+bin_width-1,T)-t+1,'single');
@@ -156,7 +174,22 @@ for t = 1:bin_width:T
         Mf{ii}(Mf{ii}<minY) = minY;
         Mf{ii}(Mf{ii}>maxY) = maxY;        
     end
-    Mf = cell2mat(Mf);
-    if nd == 2; I(:,:,t:min(t+bin_width-1,T)) = Mf; end
-    if nd == 3; I(:,:,:,t:min(t+bin_width-1,T)) = Mf; end    
+    Mf = single(cell2mat(Mf));
+    
+    switch lower(options.output_type)
+        case 'mat'
+            if nd == 2; M_final(:,:,t:min(t+bin_width-1,T)) = Mf; end
+            if nd == 3; M_final(:,:,:,t:min(t+bin_width-1,T)) = Mf; end
+        case 'memmap'
+            if nd == 2; M_final.Y(:,:,t:min(t+bin_width-1,T)) = Mf; end
+            if nd == 3; M_final.Y(:,:,:,t:min(t+bin_width-1,T)) = Mf; end
+            M_final.Yr(:,t:min(t+bin_width-1,T)) = reshape(Mf,d1*d2*d3,[]);
+        case {'hdf5','h5'}
+            rem_mem = min(bin_width,T-t+1);
+            if nd == 2; h5write(options.h5_filename,['/',options.h5_groupname],Mf,[ones(1,nd),t],[sizY(1:nd),rem_mem]); end
+            if nd == 3; h5write(options.h5_filename,['/',options.h5_groupname],Mf,[ones(1,nd),t],[sizY(1:nd),rem_mem]); end
+    end           
+    fprintf('%i out of %i frames registered \n',t+lY-1,T)
+%     if nd == 2; I(:,:,t:min(t+bin_width-1,T)) = Mf; end
+%     if nd == 3; I(:,:,:,t:min(t+bin_width-1,T)) = Mf; end    
 end
