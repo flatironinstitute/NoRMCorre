@@ -36,6 +36,19 @@ if isa(Y,'char')
         data_name = fileinfo.GroupHierarchy.Datasets.Name;
         sizY = fileinfo.GroupHierarchy.Datasets.Dims;
         T = sizY(end);
+    elseif strcmpi(ext,'raw')
+        filetype = 'raw';
+        fid = fopen(Y);
+        FOV = [512,512];
+        bitsize = 2;
+        imsize = FOV(1)*FOV(2)*bitsize;                                                   % Bit size of single frame
+        current_seek = ftell(fid);
+        fseek(fid, 0, 1);
+        file_length = ftell(fid);
+        fseek(fid, current_seek, -1);
+        T = file_length/imsize;
+        sizY = [FOV,T];
+        fclose(fid);
     end    
 elseif isobject(Y);
     filetype = 'mem';
@@ -131,6 +144,8 @@ switch filetype
         if nd == 2; Y_temp = single(Y.Y(:,:,1:init_batch)); elseif nd == 3; Y_temp = double(Y.Y(:,:,:,1:init_batch)); end
     case 'mat'
         if nd == 2; Y_temp = single(Y(:,:,1:init_batch)); elseif nd == 3; Y_temp = double(Y(:,:,:,1:init_batch)); end
+    case 'raw'
+         Y_temp = read_raw_file(Y,1,init_batch,FOV,bitsize);
 end
 
 if nargin < 3 || isempty(template)
@@ -190,7 +205,7 @@ switch lower(options.output_type)
         if nd == 2; M_final.Y(d1,d2,T) = single(0); end
         if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
         M_final.Yr(d1*d2*d3,T) = single(0);        
-    case {'hdf5','h5'}
+    case {'hdf5','h5'}        
         M_final = ['motion corrected file has been saved as ', options.h5_filename];
         if nd == 2
             h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype','single');
@@ -220,6 +235,8 @@ for it = 1:iter
             case 'mat'
                 if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
                 if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
+            case 'raw'
+                Ytm = read_raw_file(Y,t,min(t+bin_width-1,T)-t+1,FOV,bitsize);
         end
         
         if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,ndims(Ytm)))); end

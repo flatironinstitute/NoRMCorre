@@ -32,6 +32,19 @@ if isa(Y,'char')
         fileinfo = hdf5info(Y);
         data_name = fileinfo.GroupHierarchy.Datasets.Name;
         sizY = fileinfo.GroupHierarchy.Datasets.Dims;
+    elseif strcmpi(ext,'raw')
+        filetype = 'raw';
+        fid = fopen(Y);
+        FOV = [512,512];
+        bitsize = 2;
+        imsize = FOV(1)*FOV(2)*bitsize;                                                   % Bit size of single frame
+        current_seek = ftell(fid);
+        fseek(fid, 0, 1);
+        file_length = ftell(fid);
+        fseek(fid, current_seek, -1);
+        T = file_length/imsize;
+        sizY = [FOV,T];
+        fclose(fid);
     end    
 elseif isobject(Y);
     filetype = 'mem';
@@ -130,6 +143,8 @@ for t = 1:bin_width:T
         case 'mat'
             if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
             if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
+        case 'raw'
+            Ytm = read_raw_file(Y,t,min(t+bin_width-1,T)-t+1,FOV,bitsize);
     end
     if ~flag_constant
         if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,3))); end
