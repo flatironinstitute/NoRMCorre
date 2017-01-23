@@ -121,13 +121,13 @@ end
 shift_fun = @(yfft,shfts,ph,nr,nc,np) shift_reconstruct(yfft,shfts,ph,options.us_fac,nr,nc,np,'NaN',0);
     % apply shift_reconstruct function to cells
 %%
-if flag_constant;  
-    Yc = mat2cell_ov(Y,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
-    Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
-    minY = min(Y(:));
-    maxY = max(Y(:));
-end
-bin_width = options.mem_batch_size;
+% if flag_constant;  
+%     Yc = mat2cell_ov(Y,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
+%     Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
+%     minY = min(Y(:));
+%     maxY = max(Y(:));
+% end
+bin_width = min([options.mem_batch_size,T,ceil((512^2*3000)/(d1*d2*d3))]);
 for t = 1:bin_width:T
     switch filetype
         case 'tif'
@@ -146,12 +146,12 @@ for t = 1:bin_width:T
         case 'raw'
             Ytm = read_raw_file(Y,t,min(t+bin_width-1,T)-t+1,FOV,bitsize);
     end
-    if ~flag_constant
-        if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,3))); end
-        if nd == 3; Ytc = mat2cell(Ytm,d1,d2,d3,ones(1,size(Ytm,4))); end
-    else
-        Ytc = repmat({Yfft},size(Ytm,nd+1),1);
-    end
+%    if ~flag_constant
+    if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,3))); end
+    if nd == 3; Ytc = mat2cell(Ytm,d1,d2,d3,ones(1,size(Ytm,4))); end
+%     else
+%         Ytc = repmat({Yfft},size(Ytm,nd+1),1);
+%     end
     
     Mf = cell(size(Ytc));
     lY = length(Ytc);
@@ -159,14 +159,14 @@ for t = 1:bin_width:T
     
     parfor ii = 1:lY                
         shifts_temp(ii).diff(:) = 0;
-        if ~flag_constant            
-            Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
-            Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
-            minY = min(Ytc{ii}(:));
-            maxY = max(Ytc{ii}(:));
-        else
-            Yfft = Ytc{ii};
-        end
+%        if ~flag_constant            
+        Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
+        Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
+        minY = min(Ytc{ii}(:));
+        maxY = max(Ytc{ii}(:));
+%         else
+%             Yfft = Ytc{ii};
+%         end
         if all(options.mot_uf == 1)
             M_fin = shift_reconstruct(Yfft{1},shifts_temp(ii).shifts,shifts_temp(ii).diff,options.us_fac,Nr{1},Nc{1},Np{1},'NaN',0);
             Mf{ii} = M_fin;

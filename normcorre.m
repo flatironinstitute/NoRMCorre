@@ -121,16 +121,20 @@ else
 end
 
 %% read initial batch and compute template
-
+init_batch = min(T,init_batch);
+perm = randperm(T,init_batch);
 switch filetype
     case 'tif'
-        Y_temp = bigread2(Y,1,init_batch);
+        Y_temp = zeros(sizY(1),sizY(2),init_batch,'single');
+        for tt = 1:init_batch
+            Y_temp(:,:,tt) = single(imread(Y,'Index',perm(tt),'Info',tiffInfo));
+        end
     case 'hdf5'
         Y_temp = bigread2(Y,1,init_batch);        
     case 'mem'
         if nd == 2; Y_temp = Y.Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.Y(:,:,:,1:init_batch); end
     case 'mat'
-        if nd == 2; Y_temp = Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y(:,:,:,1:init_batch); end
+        if nd == 2; Y_temp = Y(:,:,perm); elseif nd == 3; Y_temp = Y(:,:,:,perm); end
 end
 Y_temp = single(Y_temp);
 
