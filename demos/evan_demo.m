@@ -94,3 +94,69 @@ for t = 1:T
     saveastiff(uint16(M(:,:,:,t)), filename);
     disp(t)
 end
+
+%% make a movie with the registered green volumes
+
+% first load them if not already in memory
+foldername_green = '/mnt/xfs1/home/eftychios/Dropbox (Simons Foundation)/Evan/fly1_runA_Oct_gc/';
+foldername_green_reg = '/mnt/xfs1/home/eftychios/Dropbox (Simons Foundation)/Evan/fly1_runA_Oct_mc_gc/';
+name = [foldername_green,'G_fly1_runA_Oct_1.tiff'];
+
+Z = loadtiff(name);
+T = 300;
+Y_raw = zeros([size(Z),T],'uint16');
+Y_reg = zeros([size(Z),T],'uint16');
+
+for t = 1:T
+    name = [foldername_green,'G_fly1_runA_Oct_',num2str(t),'.tiff'];
+    Z = loadtiff(name);
+    Y_raw(:,:,:,t) = uint16(Z);
+    name = [foldername_green_reg,'G_fly1_runA_Oct_',num2str(t),'_mc.tiff'];
+    Z = loadtiff(name);
+    Y_reg(:,:,:,t) = uint16(Z);
+end
+
+%% create planes
+pln = round(size(Z)/2);
+Y_xy = cat(1,squeeze(Y_raw(:,:,pln(3),:)),squeeze(Y_reg(:,:,pln(3),:)));
+n_xy = quantile(Y_xy(1:1000000),0.005);
+m_xy = quantile(Y_xy(1:1000000),0.995);
+Y_yz = cat(2,squeeze(Y_raw(pln(1),:,:,:)),squeeze(Y_reg(pln(1),:,:,:)));
+n_yz = quantile(Y_yz(1:1000000),0.005);
+m_yz = quantile(Y_yz(1:1000000),0.995);
+Y_xz = cat(1,squeeze(Y_raw(:,pln(2),:,:)),squeeze(Y_reg(:,pln(2),:,:)));
+n_xz = quantile(Y_xy(1:1000000),0.005);
+m_xz = quantile(Y_xy(1:1000000),0.995);
+
+
+%% make the movie
+
+vidObj = VideoWriter('evan_corrected.avi');
+set(vidObj,'FrameRate',20);
+open(vidObj);
+
+d1 = size(Z,2);
+d2 = size(Z,3)*6.5;
+
+fig = figure; colormap('bone');
+    screensize = get(0,'Screensize' );
+    fac = min(min((screensize(3:4)-200)./[d2,d1]),1.6);
+    set(gcf, 'PaperUnits', 'points', 'Units', 'points');
+    set(gcf, 'Position', round([100 100 fac*d2 fac*d1]));
+
+
+for t = 1:300
+    %tic;
+    subplot(1,6,1:3); imagesc(Y_xy(:,:,t)',[0,m_xy]); ylabel('y','fontsize',14,'fontweight','bold'); xlabel('x','fontsize',14,'fontweight','bold'); 
+            title('xy projection','fontsize',14,'fontweight','bold'); axis tight; axis equal; set(gca,'Xtick',[],'YTick',[]);
+    subplot(1,6,4:5); imagesc(Y_yz(:,:,t),[0,m_yz]); ylabel('y','fontsize',14,'fontweight','bold'); xlabel('z','fontsize',14,'fontweight','bold'); 
+            title({['Volume ',num2str(t)]; 'yz projection'},'fontsize',14,'fontweight','bold'); axis tight; axis equal; set(gca,'Xtick',[],'YTick',[]);
+      subplot(1,6,6); imagesc(Y_xz(:,:,t),[0,m_yz]); ylabel('z','fontsize',14,'fontweight','bold'); xlabel('x','fontsize',14,'fontweight','bold'); 
+            title('zx projection','fontsize',14,'fontweight','bold'); axis tight; axis equal; set(gca,'Xtick',[],'YTick',[]);        
+    drawnow;
+    currFrame = getframe(fig);
+    writeVideo(vidObj,currFrame);    
+    %toc
+end
+
+close(vidObj);

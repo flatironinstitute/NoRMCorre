@@ -2,7 +2,8 @@
 clear;
 %name = '/Users/epnevmatikakis/Documents/Ca_datasets/Taxidis/mouse2/20160919_18_59_06__XYT.raw';
 %name = '/Users/epnevmatikakis/Documents/Ca_datasets/Taxidis/single-channel recording/mouse2/20160919_18_59_06__XYT.raw';
-name = '/Users/epnevmatikakis/Documents/Ca_datasets/Taxidis/single-channel recording/mouse1/20160919_17_34_28__XYT.raw';
+%name = '/Users/epnevmatikakis/Documents/Ca_datasets/Taxidis/single-channel recording/mouse1/20160919_17_34_28__XYT.raw';
+name = '/mnt/xfs1/home/eftychios/Documents/Ca_datasets/Taxidis/single-channel recording/mouse1/20160919_17_34_28__XYT.raw';
 gcp;  % start parallel processing toolbox
 
 %% perform rigid subpixel registration (runs in about 8 min on my machine)
