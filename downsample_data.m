@@ -46,14 +46,14 @@ if ~((ssub == 1) && (tsub == 1))
     if strcmpi(direction,'time') || strcmpi(direction,'spacetime')
         if tsub~=1
             if nrm == 1
-                if ndimsY == 2; Y_ds = squeeze(mean(reshape(Y_ds(:, :, 1:(Ts*tsub)),ds(1), ds(2), tsub, Ts), 3)); end
-                if ndimsY == 3; Y_ds = squeeze(mean(reshape(Y_ds(:, :, :, 1:(Ts*tsub)),ds(1), ds(2), ds(3), tsub, Ts), 4)); end
+                if ndimsY == 2; Y_ds = squeeze(nanmean(reshape(Y_ds(:, :, 1:(Ts*tsub)),ds(1), ds(2), tsub, Ts), 3)); end
+                if ndimsY == 3; Y_ds = squeeze(nanmean(reshape(Y_ds(:, :, :, 1:(Ts*tsub)),ds(1), ds(2), ds(3), tsub, Ts), 4)); end
             elseif nrm == Inf
                 if ndimsY == 2; Y_ds = squeeze(max(reshape(Y_ds(:, :, 1:(Ts*tsub)),ds(1), ds(2), tsub, Ts),[], 3)); end
                 if ndimsY == 3; Y_ds = squeeze(max(reshape(Y_ds(:, :, :, 1:(Ts*tsub)),ds(1), ds(2), ds(3), tsub, Ts),[], 4)); end
             else
-                if ndimsY == 2; Y_ds = squeeze(mean(reshape(Y_ds(:, :, 1:(Ts*tsub)).^nrm,ds(1), ds(2), tsub, Ts), 3)).^(1/nrm); end
-                if ndimsY == 3; Y_ds = squeeze(mean(reshape(Y_ds(:, :, :, 1:(Ts*tsub)).^nrm,ds(1), ds(2), ds(3), tsub, Ts), 4)).^(1/nrm); end
+                if ndimsY == 2; Y_ds = squeeze(nanmean(reshape(Y_ds(:, :, 1:(Ts*tsub)).^nrm,ds(1), ds(2), tsub, Ts), 3)).^(1/nrm); end
+                if ndimsY == 3; Y_ds = squeeze(nanmean(reshape(Y_ds(:, :, :, 1:(Ts*tsub)).^nrm,ds(1), ds(2), ds(3), tsub, Ts), 4)).^(1/nrm); end
             end
         end
     end

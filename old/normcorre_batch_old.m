@@ -1,4 +1,4 @@
-function [M_final,shifts_g,template] = normcorre_batch(Y,options,template)
+function [M_final,shifts_g,template] = normcorre_batch_old(Y,options,template)
 
 % online motion correction through DFT subpixel registration
 % Based on the dftregistration.m function from Manuel Guizar and Jim Fienup
@@ -36,6 +36,19 @@ if isa(Y,'char')
         data_name = fileinfo.GroupHierarchy.Datasets.Name;
         sizY = fileinfo.GroupHierarchy.Datasets.Dims;
         T = sizY(end);
+    elseif strcmpi(ext,'raw')
+        filetype = 'raw';
+        fid = fopen(Y);
+        FOV = [512,512];
+        bitsize = 2;
+        imsize = FOV(1)*FOV(2)*bitsize;                                                   % Bit size of single frame
+        current_seek = ftell(fid);
+        fseek(fid, 0, 1);
+        file_length = ftell(fid);
+        fseek(fid, current_seek, -1);
+        T = file_length/imsize;
+        sizY = [FOV,T];
+        fclose(fid);
     end    
 elseif isobject(Y);
     filetype = 'mem';
@@ -118,7 +131,6 @@ else
 end
 
 %% read initial batch and compute template
-
 init_batch = min(T,init_batch);
 perm = randperm(T,init_batch);
 switch filetype
@@ -175,16 +187,8 @@ if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
 maxNumCompThreads(1);
 template = mat2cell_ov(template_in,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
 temp_mat = template_in;
-use_windowing = options.use_windowing;
-
-if use_windowing
-    fftTemp = cellfun(@fftn,cellfun(@han,template,'un',0),'un',0);
-    fftTempMat = fftn(han(temp_mat));
-else
-    fftTemp = cellfun(@fftn,template,'un',0);
-    fftTempMat = fftn(temp_mat);
-end
-
+fftTemp = cellfun(@fftn,template,'un',0);
+fftTempMat = fftn(temp_mat);
 if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end
 
@@ -202,7 +206,7 @@ switch lower(options.output_type)
         if nd == 2; M_final.Y(d1,d2,T) = single(0); end
         if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
         M_final.Yr(d1*d2*d3,T) = single(0);        
-    case {'hdf5','h5'}
+    case {'hdf5','h5'}        
         M_final = ['motion corrected file has been saved as ', options.h5_filename];
         if nd == 2
             h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype','single');
@@ -216,8 +220,6 @@ end
 cnt_buf = 0;
 fprintf('Template initialization complete. \n')
 %%
-
-
 for it = 1:iter
     for t = 1:bin_width:T
         switch filetype
@@ -234,6 +236,8 @@ for it = 1:iter
             case 'mat'
                 if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
                 if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
+            case 'raw'
+                Ytm = read_raw_file(Y,t,min(t+bin_width-1,T)-t+1,FOV,bitsize);
         end
         
         if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,ndims(Ytm)))); end
@@ -248,23 +252,14 @@ for it = 1:iter
             minY = min(Yt(:));
             maxY = max(Yt(:));
             Yc = mat2cell_ov(Yt,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
-            if use_windowing
-                fftY = cellfun(@fftn, cellfun(@han,Yc, 'un',0),'un',0);
-            else
-                fftY = cellfun(@fftn, Yc, 'un',0);
-            end
+            fftY = cellfun(@fftn, Yc, 'un',0);
             
             M_fin = cell(length(xx_us),length(yy_us),length(zz_us)); %zeros(size(Y_temp));
             shifts_temp = zeros(length(xx_s),length(yy_s),length(zz_s),nd); 
             diff_temp = zeros(length(xx_s),length(yy_s),length(zz_s));
             if numel(M_fin) > 1      
-                if use_windowing
-                    if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(han(Yt)),us_fac,-max_shift,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
-                    if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(han(Yt)),us_fac,-max_shift,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
-                else
-                    if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
-                    if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
-                end
+                if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
+                if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
                 max_dev = max_dev_g;
             else
                 lb = -max_shift(1,nd);
@@ -275,22 +270,21 @@ for it = 1:iter
                 for j = 1:length(yy_s)           
                     for k = 1:length(zz_s)
                         if nd == 2
-                            %[output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2));  
-                            output = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2));  
+                            %[output,Greg] = dftregistration_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift);        
+                            [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2));  
                         elseif nd == 3
-                            output = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev); 
+                            %[output,Greg] = dftregistration_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift);
+                            [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev); 
                             shifts_temp(i,j,k,3) = output(5);
                         end
-                       
+                        M_temp = real(ifftn(Greg));
+                        M_temp = remove_boundaries(M_temp,output(3:end),'none',template{i,j,k});
                         %buffer{i,j,k,ii} = M_temp;
                         shifts_temp(i,j,k,1) = output(3);
                         shifts_temp(i,j,k,2) = output(4); 
                         diff_temp(i,j,k) = output(2);
-                        if all(mot_uf == 1)
-                            %M_temp = real(ifftn(Greg));
-                            %M_temp = remove_boundaries(M_temp,output(3:end),'none',template{i,j,k});                            
-                            %M_fin{i,j,k} = remove_boundaries(M_temp,output(3:end),'NaN',template{i,j,k},add_value);
-                            M_fin{i,j,k} = shift_reconstruct(Yt,shifts_temp(i,j,k,:),diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'NaN',add_value);
+                        if mot_uf == 1
+                            M_fin{i,j,k} = remove_boundaries(M_temp,output(3:end),'NaN',template{i,j,k},add_value);
                         end                                               
                     end
                 end
@@ -393,13 +387,8 @@ for it = 1:iter
                 template = mat2cell_ov(nanmedian(buffer_med,nd+1),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
             end
             temp_mat = cell2mat_ov(template,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
-            if use_windowing
-                fftTemp = cellfun(@fftn, cellfun(@han,template, 'un',0),'un',0);            
-                fftTempMat = fftn(han(temp_mat));            
-            else
-                fftTemp = cellfun(@fftn, template, 'un',0);            
-                fftTempMat = fftn(temp_mat);
-            end
+            fftTemp = cellfun(@fftn, template, 'un',0);            
+            fftTempMat = fftn(temp_mat);
         end
     end
 

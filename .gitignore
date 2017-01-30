@@ -12,3 +12,5 @@ dftregistration.m
 *.tif
 
 *.h5
+
+demos/negar_demo.m
