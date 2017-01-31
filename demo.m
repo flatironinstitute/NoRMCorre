@@ -12,7 +12,7 @@ if ~exist(name,'file')  % download file if it doesn't exist in the directory
     fprintf('done.');
 end
 
-tic; Y = loadtiff(name); toc; % read the file (optional, you can also pass the path in the function instead of Y)
+tic; Y = read_file(name); toc; % read the file (optional, you can also pass the path in the function instead of Y)
 Y = double(Y);      % convert to double precision 
 T = size(Y,ndims(Y));
 %Y = Y - min(Y(:));

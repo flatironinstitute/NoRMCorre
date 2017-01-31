@@ -46,6 +46,8 @@ Names = [
     'use_windowing      ' % flag for windowing data before fft (default: false)
     'window_length      ' % length of window on each side of the signal as a fraction of signal length
                            %    total length = length(signal)(1 + 2*window_length). (default: 0.5)
+    % bitsize for reading .raw files
+    'bitsize            ' % (default: 2 (uint16). other choices 1 (uint8), 4 (single), 8 (double))
    ]; 
    
 [m,n] = size(Names);
@@ -164,6 +166,8 @@ Values = [
     % use_windowing
     {false}
     {0.5}
+    % bitsize for reading .raw files
+    {2}
     ];
 
 for j = 1:m

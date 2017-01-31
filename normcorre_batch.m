@@ -36,6 +36,19 @@ if isa(Y,'char')
         data_name = fileinfo.GroupHierarchy.Datasets.Name;
         sizY = fileinfo.GroupHierarchy.Datasets.Dims;
         T = sizY(end);
+    elseif strcmpi(ext,'raw')
+        filetype = 'raw';
+        fid = fopen(Y);
+        FOV = [options.d1,options.d2];
+        bitsize = options.bitsize;
+        imsize = FOV(1)*FOV(2)*bitsize;                                                   % Bit size of single frame
+        current_seek = ftell(fid);
+        fseek(fid, 0, 1);
+        file_length = ftell(fid);
+        fseek(fid, current_seek, -1);
+        T = file_length/imsize;
+        sizY = [FOV,T];
+        fclose(fid);        
     end    
 elseif isobject(Y);
     filetype = 'mem';
@@ -234,6 +247,8 @@ for it = 1:iter
             case 'mat'
                 if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
                 if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
+            case 'raw'
+                Ytm = single(read_raw_file(Y,t,min(t+bin_width-1,T)-t+1,FOV,bitsize));                
         end
         
         if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,ndims(Ytm)))); end

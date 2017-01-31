@@ -35,8 +35,8 @@ if isa(Y,'char')
     elseif strcmpi(ext,'raw')
         filetype = 'raw';
         fid = fopen(Y);
-        FOV = [512,512];
-        bitsize = 2;
+        FOV = [options.d1,options.d2];
+        bitsize = options.bitsize;
         imsize = FOV(1)*FOV(2)*bitsize;                                                   % Bit size of single frame
         current_seek = ftell(fid);
         fseek(fid, 0, 1);
