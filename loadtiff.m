@@ -1,6 +1,9 @@
-function oimg = loadtiff(path)
+function oimg = loadtiff(path, sFrame, num2read)
+
 % Copyright (c) 2012, YoonOh Tak
 % All rights reserved.
+% Modified by Eftychios Pnevmatikakis, 01/2017.
+
 % 
 % Redistribution and use in source and binary forms, with or without 
 % modification, are permitted provided that the following conditions are 
@@ -26,6 +29,14 @@ function oimg = loadtiff(path)
 % CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 % POSSIBILITY OF SUCH DAMAGE.
+
+if nargin < 3 || isempty(num2read)
+    num2read = Inf;
+end
+
+if nargin < 2 || isempty(sFrame)
+    sFrame = 1;
+end
 
 tStart = tic;
 warn_old = warning('off', 'all'); % To ignore unknown TIFF tag.
@@ -63,6 +74,7 @@ tfl = 0; % Total frame length
 tcl = 1; % Total cell length
 while true
     tfl = tfl + 1; % Increase frame count
+    
     iinfo(tfl).w       = tiff.getTag('ImageWidth');
     iinfo(tfl).h       = tiff.getTag('ImageLength');
     iinfo(tfl).spp     = tiff.getTag('SamplesPerPixel');
@@ -91,17 +103,26 @@ while true
 end
 
 %% Load image data
+T = tfl;
+num2read = min(num2read,T-sFrame+1);
+
 if tcl == 1 % simple image (no cell)
-    for tfl = 1:tfl
+    
+    for tfl = sFrame:sFrame+num2read-1
         tiff.setDirectory(tfl);
         temp = tiff.read();
+        if tfl == sFrame
+            oimg = zeros([size(temp),num2read],'like',temp);
+        end
+        
         if iinfo(tfl).complex
             temp = temp(:,:,1:2:end-1,:) + temp(:,:,2:2:end,:)*1i;
         end
+       
         if ~iinfo(tfl).color
-            oimg(:,:,iinfo(tfl).fid) = temp; % Grayscale image
+            oimg(:,:,iinfo(tfl).fid - sFrame + 1) = temp; % Grayscale image
         else
-            oimg(:,:,:,iinfo(tfl).fid) = temp; % Color image
+            oimg(:,:,:,iinfo(tfl).fid - sFrame + 1) = temp; % Color image
         end
     end
 else % multiple image (multiple cell)
