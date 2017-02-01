@@ -15,17 +15,21 @@ The ```options``` struct can be set either manually or by using the function ```
 
 | Parameter name | Description |
 |----------------|-------------|
+| ```d1,d2,d3``` | dimensions of field of view |
 | ```grid_size``` | size of non-overlapping portion of the grid in each direction (x-y-z)|
 | ```overlap_pre```| size of overlapping region in each direction before upsampling  |
 | ```mot_uf```    | upsampling factor for smoothing and refinement of motion field |
 | ```overlap_post ``` | size of overlapping region in each direction after upsampling |
 | ```max_shift``` | maximum allowed shift for rigid translation | 
 | ```max_dev``` | maximum deviation of each patch from estimated rigid translation |
-| ```upd_template``` | update the template after registering some frames |
+| ```upd_template``` | update the template online after registering some frames |
 | ```bin_width``` | length of bin over which the registered frames are averaged to update the template |
-| ```iter``` | numeber of times to go over the dataset |
+| ```init_batch``` | number of frames to be taken for computing initial template |
+| ```iter``` | number of times to go over the dataset |
+| ```output_type``` | type of output registered file |
 
-The performance of registration can be evaluated using the function ```motion_metrics.m```. The function simply computes the correlation coefficient of each (registered) frame, with the mean (registered) frame across time.
+
+The performance of registration can be evaluated using the function ```motion_metrics.m```. The function simply computes the correlation coefficient of each (registered) frame, with the mean (registered) frame across time, the mean registered frame, and its crispness.
 
 ## Developers
 
