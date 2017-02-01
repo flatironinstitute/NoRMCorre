@@ -5,7 +5,7 @@ This package can be used for online piecewise rigid motion correction of 2d (pla
 
 The algorithm operates by splitting the field of view into a set of overlapping patches. For each patch and each frame a rigid translation is estimated by aligning the patch against a template using an efficient, FFT based, algorithm for subpixel registration [1](#ref). The estimated set of translations is further upsampled to a finer resolution to create a smooth motion field that is applied to a set of smaller overlapping patches. Extra care is taken to avoid smearing caused by interpolating overlapping patches with drastically different motion vectors. The registered frame is used to update the template in an online fashion by calculating a running/mean of past registered frames. The pipeline is summarized in the figure below.
 
-![Alt text](dev/pipeline.png?raw=true "piecewise rigid motion correction pipeline")
+![Alt text](pipeline.png?raw=true "piecewise rigid motion correction pipeline")
 
 ## Code details
 
