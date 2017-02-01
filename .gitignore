@@ -13,4 +13,6 @@ dftregistration.m
 
 *.h5
 
-demos/negar_demo.m
+demos/n*_demo.m
+old/*
+dev/*
