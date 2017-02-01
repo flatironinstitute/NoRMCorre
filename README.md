@@ -44,6 +44,8 @@ This package will be integrated with the [Matlab code](https://www.github.com/ep
 
 A python version of this algorithm developed from [Andrea A. Giovannuci](https://github.com/agiovann) is included as part of the [CaImAn](https://github.com/simonsfoundation/CaImAn) package that provides a complete pipeline for calcium imaging data pre-processing.
 
+Although the two implementations give almost identical results for the same input file, there are some slight differences in the way they are called and their capabilities. These differences are highlighted [here.](https://github.com/simonsfoundation/NoRMCorre/wiki/Differences-between-Matlab-and-Python-implementations)
+
 ## Acknowledgements
 
 Example dataset is kindly provided from Andrea Giovannucci, taken at Wang lab (Princeton University).
