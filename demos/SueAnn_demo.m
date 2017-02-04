@@ -1,44 +1,28 @@
 clear;
+gcp;
 name = '/Users/epnevmatikakis/Documents/Ca_datasets/Sueann/k56_20160608_RSM_125um_41mW_zoom2p2_00001_00034.tif';
 addpath(genpath('../../NoRMCorre'));
 Y = read_file(name);
 
 %% set parameters (first try out rigid motion correction)
-
+Y = Y(:,:,1:2000);
 options_rigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'bin_width',50,'max_shift',15,'us_fac',50);
 
 %% perform motion correction
-tic; [M1a,shifts1a,template1a] = normcorre(Y,options_rigid); toc
-tic; [M1b,shifts1b,template1b] = normcorre_batch(Y,options_rigid); toc
+tic; [M1,shifts1,template1] = normcorre_batch(Y,options_rigid); toc
 [cY,mY,vY] = motion_metrics(Y,options_rigid.max_shift);
-[cM1a,mM1a,vM1a] = motion_metrics(M1a,options_rigid.max_shift);
-[cM1b,mM1b,vM1b] = motion_metrics(M1b,options_rigid.max_shift);
-
-%% now try non-rigid
+[cM1,mM1,vM1] = motion_metrics(M1,options_rigid.max_shift);
 
 %% now try non-rigid motion correction
-options_nonrigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'grid_size',[128,128],'overlap_pre',32,'overlap_post',32,'mot_uf',4,'bin_width',50,'max_shift',15,'max_dev',3,'us_fac',50);
+options_nonrigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'grid_size',[64,64],'overlap_pre',32,'overlap_post',32,'mot_uf',4,'bin_width',100,'max_shift',15,'max_dev',8,'us_fac',50);
 
-tic; [M2a,shifts2a,template2a] = normcorre(Y,options_nonrigid); toc
-tic; [M2b,shifts2b,template2b] = normcorre_batch(Y,options_nonrigid); toc
-[cM2a,mM2a,vM2a] = motion_metrics(M2a,options_rigid.max_shift);
-[cM2b,mM2b,vM2b] = motion_metrics(M2b,options_rigid.max_shift);
-
-
-% These results are with only one pass of the data completely online. In
-% practice we can improve if we do multiple passes (with options.iter > 1)
-% or do fancy things like, first correct with rigid which is more robust to
-% large perturbation, then refine by correcting with non-rigid
+tic; [M2,shifts2,template2] = normcorre_batch(Y,options_nonrigid,template1); toc
+[cM2,mM2,vM2] = motion_metrics(M2,12);
 
 %% plot data
 
-nnY = quantile(Y(1:10000),0.005);
-mmY = quantile(Y(1:10000),0.995);
-%%
-[cY,mY,vY] = motion_metrics(Y,options_nr.max_shift);
-[cM1,mM1,vM1] = motion_metrics(M1,options_nr.max_shift);
-[cM2,mM2,vM2] = motion_metrics(M2,options_nr.max_shift);
-
+nnY = quantile(Y(1:1000000),0.002);
+mmY = quantile(Y(1:1000000),0.998);
 T = length(cY);
 %% plot metrics
 figure;
@@ -72,23 +56,38 @@ figure;
             xlabel('timestep','fontsize',14,'fontweight','bold')
     linkaxes([ax1,ax2,ax3],'x')
 
-%% display downsampled data
-
-tsub = 5;
-
-Y_ds = downsample_data(Y,'time',tsub);
-M_ds = downsample_data(M2,'time',tsub);
-nnY_ds = quantile(Y_ds(:),0.005);
-mmY_ds = quantile(Y_ds(:),0.995);
-%%
-figure;
-for t = 1:1:size(Y_ds,3)
-    subplot(121);imagesc(Y_ds(:,:,t),[nnY_ds,mmY_ds]); xlabel('Raw data (downsampled)','fontsize',14,'fontweight','bold'); axis equal; axis tight;
-    title(sprintf('Frame %i out of %i',t,T),'fontweight','bold','fontsize',14); colormap('bone');
-    set(gca,'XTick',[],'YTick',[]);
-    subplot(122);imagesc(M_ds(:,:,t),[nnY_ds,mmY_ds]); xlabel('non-rigid corrected','fontsize',14,'fontweight','bold'); axis equal; axis tight;
-    title(sprintf('Frame %i out of %i',t,T),'fontweight','bold','fontsize',14); colormap('bone')
-    set(gca,'XTick',[],'YTick',[]);
-    drawnow;
-    pause(0.001);
-end
+%% make the movies of the paper
+% %% make video of downsampled data
+% tsub = 5;
+% Y_sub = downsample_data(Y,'time',5);
+% Mr_sub = downsample_data(M1,'time',5);
+% Mn_sub = downsample_data(M2,'time',5);
+% 
+% nnY = quantile(Y_sub(1:1e7),0.005);
+% mmY = quantile(Y_sub(1:1e7),1-0.005);
+% 
+% Y_all = cat(1,Y_sub,int16(Mr_sub),int16(Mn_sub));
+% 
+% fig = figure; colormap('bone')
+%     set(gcf, 'Position', round([100 100 .8*512, 3*512]));
+%     vidObj = VideoWriter('SueAnn_downsampled25xT.avi');
+%     set(vidObj,'FrameRate',15);
+%     open(vidObj);
+% for t = 1:size(Y_sub,3)
+%     imagesc(Y_all(:,:,t),[nnY,mmY]); axis equal; axis tight;
+%         set(gca,'Xtick',[],'Ytick',[]);
+%         set(gca,'Position',[0.05,0.05,0.92,0.92])
+%         xlabel(sprintf('time %2.2f s',t/6),'fontsize',18,'fontweight','bold')
+%         ylabel('Registered (pw-rigid)             Registered (rigid)                            Original data','fontsize',18,'fontweight','bold')
+%     drawnow;
+%     currFrame = getframe(fig);
+%     writeVideo(vidObj,currFrame);    
+% end
+% close(vidObj);
+% 
+% %% make movie of online correction
+% 
+% options_nonrigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'grid_size',[64,64],'overlap_pre',32,'overlap_post',32,'mot_uf',4,'bin_width',50,'max_shift',15,'max_dev',3,'us_fac',50,'plot_flag',true,...
+%     'make_avi',true,'name','SueAnnFullMovie.avi','fr',30);
+% 
+% tic; [M2b,shifts2b,template2b] = normcorre(Y,options_nonrigid); toc
