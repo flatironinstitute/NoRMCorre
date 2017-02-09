@@ -189,6 +189,7 @@ maxNumCompThreads(1);
 template = mat2cell_ov(template_in,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY);
 temp_mat = template_in;
 use_windowing = options.use_windowing;
+phase_flag = options.phase_flag;
 
 if use_windowing
     fftTemp = cellfun(@fftn,cellfun(@han,template,'un',0),'un',0);
@@ -274,11 +275,11 @@ for it = 1:iter
             diff_temp = zeros(length(xx_s),length(yy_s),length(zz_s));
             if numel(M_fin) > 1      
                 if use_windowing
-                    if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(han(Yt)),us_fac,-max_shift,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
-                    if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(han(Yt)),us_fac,-max_shift,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
+                    if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(han(Yt)),us_fac,-max_shift,max_shift,phase_flag); lb = out_rig(3:4); ub = out_rig(3:4); end
+                    if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(han(Yt)),us_fac,-max_shift,max_shift,phase_flag); lb = out_rig(3:5); ub = out_rig(3:5); end
                 else
-                    if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
-                    if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
+                    if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift,phase_flag); lb = out_rig(3:4); ub = out_rig(3:4); end
+                    if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift,phase_flag); lb = out_rig(3:5); ub = out_rig(3:5); end
                 end
                 max_dev = max_dev_g;
             else
@@ -291,9 +292,9 @@ for it = 1:iter
                     for k = 1:length(zz_s)
                         if nd == 2
                             %[output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2));  
-                            output = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2));  
+                            output = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2),phase_flag);  
                         elseif nd == 3
-                            output = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev); 
+                            output = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev,phase_flag); 
                             shifts_temp(i,j,k,3) = output(5);
                         end
                        

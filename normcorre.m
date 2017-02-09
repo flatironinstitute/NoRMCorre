@@ -256,8 +256,8 @@ for it = 1:iter
         shifts_temp = zeros(length(xx_s),length(yy_s),length(zz_s),nd); 
         diff_temp = zeros(length(xx_s),length(yy_s),length(zz_s));
         if numel(M_fin) > 1           
-            if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:4); ub = out_rig(3:4); end
-            if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift); lb = out_rig(3:5); ub = out_rig(3:5); end
+            if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift,options.phase_flag); lb = out_rig(3:4); ub = out_rig(3:4); end
+            if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift,options.phase_flag); lb = out_rig(3:5); ub = out_rig(3:5); end
         else
             lb = -max_shift(1,nd);
             ub = max_shift(1,nd);
@@ -269,10 +269,10 @@ for it = 1:iter
                     for k = 1:length(zz_s)
                         if nd == 2
                             %[output,Greg] = dftregistration_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift);        
-                            [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2));  
+                            [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2),options.phase_flag);  
                         elseif nd == 3
                             %[output,Greg] = dftregistration_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift);
-                            [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev); 
+                            [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev,options.phase_flag); 
                             shifts_temp(i,j,k,3) = output(5);
                         end
                         M_temp = real(ifftn(Greg));
@@ -296,8 +296,8 @@ for it = 1:iter
                 [i,j,k] = ind2sub([length(xx_s),length(yy_s),length(zz_s)],ii)
                 %if nd == 2; [output,Greg] = dftregistration_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift); end
                 %if nd == 3; [output,Greg] = dftregistration_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift); end
-                if nd == 2; [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2)); end
-                if nd == 3; [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev); end                
+                if nd == 2; [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2),options.phase_flag); end
+                if nd == 3; [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev,options.phase_flag); end                
                 M_temp = real(ifftn(Greg));
                 Mt2{ii} = M_temp;
                 shifts_cell{ii} = output(3:end);

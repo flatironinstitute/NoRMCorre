@@ -1,4 +1,4 @@
-function [output, Greg] = dftregistration_min_max(buf1ft,buf2ft,usfac,min_shift,max_shift)
+function [output, Greg] = dftregistration_min_max(buf1ft,buf2ft,usfac,min_shift,max_shift,phase_flag)
 % function [output Greg] = dftregistration(buf1ft,buf2ft,usfac);
 % Efficient subpixel image registration by crosscorrelation. This code
 % gives the same precision as the FFT upsampled cross correlation in a
@@ -69,6 +69,10 @@ function [output, Greg] = dftregistration_min_max(buf1ft,buf2ft,usfac,min_shift,
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 % POSSIBILITY OF SUCH DAMAGE.
 
+if ~exist('phase_flag','var')
+    phase_flag = true;
+end
+
 if ~exist('usfac','var')
     usfac = 1;
 end
@@ -88,14 +92,19 @@ if isscalar(max_shift); max_shift = max_shift*[1,1]; end
 Nr = ifftshift(-fix(nr/2):ceil(nr/2)-1);
 Nc = ifftshift(-fix(nc/2):ceil(nc/2)-1);
 
+buf_prod = buf1ft.*conj(buf2ft);
 if usfac == 0
     % Simple computation of error and phase difference without registration
+    
     CCmax = sum(buf1ft(:).*conj(buf2ft(:)));
     row_shift = 0;
     col_shift = 0;
 elseif usfac == 1
     % Single pixel registration
-    CC = ifft2(buf1ft.*conj(buf2ft));
+    if phase_flag
+        buf_prod = buf_prod./abs(buf_prod);
+    end
+    CC = ifft2(buf_prod);
     CCabs = abs(CC);
     [row_shift, col_shift] = find(CCabs == max(CCabs(:)));
     if Nr(row_shift) > max_shift(1) || Nc(col_shift) > max_shift(2) || Nr(row_shift) < min_shift(1) || Nc(col_shift) < min_shift(2)
@@ -112,7 +121,11 @@ elseif usfac == 1
     col_shift = Nc(col_shift);
 elseif usfac > 1
     % Start with usfac == 2
-    CC = ifft2(FTpad(buf1ft.*conj(buf2ft),[2*nr,2*nc]));
+    buf_pad = FTpad(buf_prod,[2*nr,2*nc]);
+    if phase_flag
+        buf_pad = buf_pad./(abs(buf_pad)+1e-10);
+    end
+    CC = ifft2(buf_pad);
     CCabs = abs(CC);
     [row_shift, col_shift] = find(CCabs == max(CCabs(:)),1,'first');        
     % Now change shifts so that they represent relative shifts and not indices
