@@ -27,6 +27,7 @@ The ```options``` struct can be set either manually or by using the function ```
 | ```init_batch``` | number of frames to be taken for computing initial template |
 | ```iter``` | number of times to go over the dataset |
 | ```output_type``` | type of output registered file |
+| ```phase_flag``` | flag for using phase correlation |
 
 
 The performance of registration can be evaluated using the function ```motion_metrics.m```. The function simply computes the correlation coefficient of each (registered) frame, with the mean (registered) frame across time, the mean registered frame, and its crispness.
