@@ -24,6 +24,7 @@ if isa(Y,'char')
         tiffInfo = imfinfo(Y);
         filetype = 'tif';
         T = length(tiffInfo);
+        sizY = [tiffInfo(1).Height,tiffInfo(1).Width,T];
     elseif strcmpi(ext,'mat')
         filetype = 'mem';
         Y = matfile(Y,'Writable',true);
