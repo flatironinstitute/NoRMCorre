@@ -16,3 +16,4 @@ dftregistration.m
 demos/n*_demo.m
 old/*
 dev/*
+demos/*
