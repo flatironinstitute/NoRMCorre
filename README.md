@@ -51,6 +51,12 @@ A python version of this algorithm developed from [Andrea A. Giovannuci](https:/
 
 Although the two implementations give almost identical results for the same input file, there are some slight differences in the way they are called and their capabilities. These differences are highlighted [here.](https://github.com/simonsfoundation/NoRMCorre/wiki/Differences-between-Matlab-and-Python-implementations)
 
+## More details and citing NoRMCorre
+
+If you find this package useful please cite the following paper:
+
+Eftychios A. Pnevmatikakis and Andrea Giovannucci, *NoRMCorre: An online algorithm for piecewise rigid motion correction of calcium imaging data*, bioRxiv 108514; doi: [https://doi.org/10.1101/108514](https://doi.org/10.1101/108514)
+
 ## Acknowledgements
 
 Example dataset is kindly provided from Andrea Giovannucci, taken at Wang lab (Princeton University).
