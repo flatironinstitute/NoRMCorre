@@ -43,6 +43,7 @@ Names = [
     'output_type        ' % 'mat' (load in memory), 'memmap', 'tiff', 'hdf5', 'bin' (default:mat)
     'h5_groupname       ' % name for hdf5 dataset (default: 'mov')
     'h5_filename        ' % name for hdf5 saved file (default: 'motion_corrected.h5')
+    'tiff_filename      ' % name for saved tiff stack (default: 'motion_corrected.tif')
     % use windowing
     'use_windowing      ' % flag for windowing data before fft (default: false)
     'window_length      ' % length of window on each side of the signal as a fraction of signal length
@@ -165,6 +166,7 @@ Values = [
     {'mat'}
     {'mov'}
     {'motion_corrected.h5'}
+    {'motion_corrected.tif'}
     % use_windowing
     {false}
     {0.5}

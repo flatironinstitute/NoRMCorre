@@ -136,19 +136,23 @@ init_batch = min(T,init_batch);
 perm = randperm(T,init_batch);
 switch filetype
     case 'tif'
-        Y_temp = zeros(sizY(1),sizY(2),init_batch,'single');
-        for tt = 1:init_batch
-            Y_temp(:,:,tt) = single(imread(Y,'Index',perm(tt),'Info',tiffInfo));
+        Y1 = imread(Y,'Index',perm(1),'Info',tiffInfo);
+        Y_temp = zeros(sizY(1),sizY(2),init_batch,'like',Y1);
+        Y_temp(:,:,1) = Y1;
+        for tt = 2:init_batch
+            Y_temp(:,:,tt) = imread(Y,'Index',perm(tt),'Info',tiffInfo);
         end
     case 'hdf5'
-        Y_temp = single(bigread2(Y,1,init_batch));        
+        Y_temp = bigread2(Y,1,init_batch);        
     case 'mem'
-        if nd == 2; Y_temp = single(Y.Y(:,:,1:init_batch)); elseif nd == 3; Y_temp = single(Y.Y(:,:,:,1:init_batch)); end
+        if nd == 2; Y_temp = Y.Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.Y(:,:,:,1:init_batch); end
     case 'mat'
-        if nd == 2; Y_temp = single(Y(:,:,perm)); elseif nd == 3; Y_temp = single(Y(:,:,:,perm)); end
+        if nd == 2; Y_temp = Y(:,:,perm); elseif nd == 3; Y_temp = Y(:,:,:,perm); end
     case 'raw'
          Y_temp = read_raw_file(Y,1,init_batch,FOV,bitsize);
 end
+data_type = class(Y_temp);
+Y_temp = single(Y_temp);
 
 if nargin < 3 || isempty(template)
     template_in = median(Y_temp,nd+1)+add_value;
@@ -222,6 +226,13 @@ switch lower(options.output_type)
             h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype','single');
         elseif nd == 3
             h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype','single');
+        end
+    case {'tif','tiff'}
+        M_final = ['motion corrected file has been saved as ', options.tiff_filename];
+        opts_tiff.append = true;
+        opts_tiff.big = true;
+        if nd == 3
+            error('Saving volumetric tiff stacks is currently not supported. Use a different filetype');
         end
     otherwise
         error('This filetype is currently not supported')
@@ -375,6 +386,10 @@ for it = 1:iter
                 if rem_mem == options.mem_batch_size || t+lY-1 == T
                     if nd == 2; h5write(options.h5_filename,['/',options.h5_groupname],mem_buffer(:,:,1:rem_mem),[ones(1,nd),t+lY-rem_mem],[sizY(1:nd),rem_mem]); end
                     if nd == 3; h5write(options.h5_filename,['/',options.h5_groupname],mem_buffer(:,:,:,1:rem_mem),[ones(1,nd),t+lY-rem_mem],[sizY(1:nd),rem_mem]); end
+                end
+            case {'tif','tiff'}
+                if rem_mem == options.mem_batch_size || t+lY-1 == T
+                    saveastiff(cast(mem_buffer(:,:,1:rem_mem),data_type),options.tiff_filename,opts_tiff);
                 end
         end        
         
