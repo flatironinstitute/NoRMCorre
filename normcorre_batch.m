@@ -56,7 +56,7 @@ elseif isobject(Y);
     T = sizY(end);
 else % array loaded in memory
     filetype = 'mat';
-    Y = double(Y);
+    %Y = double(Y);
     sizY = size(Y);
     T = sizY(end);
 end
