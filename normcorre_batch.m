@@ -130,6 +130,13 @@ else
     max_shift = min(options.max_shift,grid_size./mot_uf);
 end
 
+while mod(T,bin_width) == 1
+    if T == 1
+        error('Movie appears to have only one frame. Use the function normcorre instead')        
+    end
+    bin_width = bin_width + 1;
+end
+
 %% read initial batch and compute template
 
 init_batch = min(T,init_batch);
