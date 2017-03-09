@@ -130,7 +130,7 @@ elseif usfac == 1
     pln_shift = Np(pln_shift);
 elseif usfac > 1
     % Start with usfac == 2
-    buf_pad = FTpad(buf_prod,[2*nr,2*nc,2*np]);
+    buf_pad = FTpad3d(buf_prod,[2*nr,2*nc,2*np]);
     if phase_flag
         buf_pad = buf_pad./(abs(buf_pad)+1e-10);
     end
