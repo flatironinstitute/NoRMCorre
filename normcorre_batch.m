@@ -259,7 +259,7 @@ for it = 1:iter
                     Ytm(:,:,tt) = single(imread(Y,'Index',t+tt-1,'Info',tiffInfo));
                 end
             case 'hdf5'
-                Ytm = single(h5read(Y,data_name,[ones(1,length(sizY)-1),t],[sizY(1:end-1),min(t+bin_width-1,T)-t+1]));
+                Ytm = single(h5read(Y,data_name,[ones(1,nd),t],[sizY(1:nd),min(t+bin_width-1,T)-t+1]));
             case 'mem'
                 if nd == 2; Ytm = single(Y.Y(:,:,t:min(t+bin_width-1,T))); end
                 if nd == 3; Ytm = single(Y.Y(:,:,:,t:min(t+bin_width-1,T))); end
