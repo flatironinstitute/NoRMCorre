@@ -224,15 +224,15 @@ switch lower(options.output_type)
         M_final = zeros([sizY,T]);
     case 'memmap'
         M_final = matfile(filename,'Writable',true);
-        if nd == 2; M_final.Y(d1,d2,T) = single(0); end
-        if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
-        M_final.Yr(d1*d2*d3,T) = single(0);        
+        if nd == 2; M_final.Y(d1,d2,T) = zeros(1,data_type); end
+        if nd == 3; M_final.Y(d1,d2,d3,T) = zeros(1,data_type); end
+        M_final.Yr(d1*d2*d3,T) = zeros(1,data_type);        
     case {'hdf5','h5'}
         M_final = ['motion corrected file has been saved as ', options.h5_filename];
         if nd == 2
-            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype','single');
+            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype',data_type);
         elseif nd == 3
-            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype','single');
+            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype',data_type);
         end
     case {'tif','tiff'}
         M_final = ['motion corrected file has been saved as ', options.tiff_filename];
@@ -376,8 +376,8 @@ for it = 1:iter
         if ~strcmpi(options.output_type,'mat')
             rem_mem = rem(t+lY-1,options.mem_batch_size);
             if rem_mem == 0; rem_mem = options.mem_batch_size; end            
-            if nd == 2; mem_buffer(:,:,rem_mem-lY+1:rem_mem) = single(Mf); end
-            if nd == 3; mem_buffer(:,:,:,rem_mem-lY+1:rem_mem) = single(Mf); end
+            if nd == 2; mem_buffer(:,:,rem_mem-lY+1:rem_mem) = cast(Mf,data_type); end
+            if nd == 3; mem_buffer(:,:,:,rem_mem-lY+1:rem_mem) = cast(Mf,data_type); end
         end
         switch lower(options.output_type)
             case 'mat'

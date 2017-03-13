@@ -126,9 +126,11 @@ init_batch = min(T,init_batch);
 perm = randperm(T,init_batch);
 switch filetype
     case 'tif'
-        Y_temp = zeros(sizY(1),sizY(2),init_batch,'single');
+        Y1 = imread(Y,'Index',1,'Info',tiffInfo);
+        Y_temp = zeros(sizY(1),sizY(2),init_batch,'like',Y1);
+        Y_temp(:,:,1) = Y1;
         for tt = 1:init_batch
-            Y_temp(:,:,tt) = single(imread(Y,'Index',perm(tt),'Info',tiffInfo));
+            Y_temp(:,:,tt) = imread(Y,'Index',perm(tt),'Info',tiffInfo);
         end
     case 'hdf5'
         Y_temp = bigread2(Y,1,init_batch);        
@@ -137,6 +139,8 @@ switch filetype
     case 'mat'
         if nd == 2; Y_temp = Y(:,:,perm); elseif nd == 3; Y_temp = Y(:,:,:,perm); end
 end
+
+data_type = class(Y_temp);
 Y_temp = single(Y_temp);
 
 if nargin < 3 || isempty(template)
@@ -194,15 +198,15 @@ switch lower(options.output_type)
         M_final = zeros([sizY,T]);
     case 'memmap'
         M_final = matfile(filename,'Writable',true);
-        if nd == 2; M_final.Y(d1,d2,T) = single(0); end
-        if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
-        M_final.Yr(d1*d2*d3,T) = single(0);        
+        if nd == 2; M_final.Y(d1,d2,T) = zeros(1,data_type); end
+        if nd == 3; M_final.Y(d1,d2,d3,T) = zeros(1,data_type); end
+        M_final.Yr(d1*d2*d3,T) = zeros(1,data_type);        
     case {'hdf5','h5'}
         M_final = ['motion corrected file has been saved as ', options.h5_filename];
         if nd == 2
-            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype','single');
+            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype',data_type);
         elseif nd == 3
-            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype','single');
+            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype',data_type);
         end
     otherwise
         error('This filetype is currently not supported')
@@ -362,8 +366,8 @@ for it = 1:iter
         if ~strcmpi(options.output_type,'mat')
             rem_mem = rem(t,options.mem_batch_size);
             if rem_mem == 0; rem_mem = options.mem_batch_size; end            
-            if nd == 2; mem_buffer(:,:,rem_mem) = single(Mf); end
-            if nd == 3; mem_buffer(:,:,:,rem_mem) = single(Mf); end
+            if nd == 2; mem_buffer(:,:,rem_mem) = cast(Mf,data_type); end
+            if nd == 3; mem_buffer(:,:,:,rem_mem) = cast(Mf,data_type); end
         end
         switch lower(options.output_type)
             case 'mat'
