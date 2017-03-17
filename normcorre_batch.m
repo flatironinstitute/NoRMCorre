@@ -379,6 +379,7 @@ for it = 1:iter
             if nd == 2; mem_buffer(:,:,rem_mem-lY+1:rem_mem) = cast(Mf,data_type); end
             if nd == 3; mem_buffer(:,:,:,rem_mem-lY+1:rem_mem) = cast(Mf,data_type); end
         end
+        if it == iter
         switch lower(options.output_type)
             case 'mat'
                 if nd == 2; M_final(:,:,t:min(t+bin_width-1,T)) = Mf; end
@@ -399,6 +400,7 @@ for it = 1:iter
                     saveastiff(cast(mem_buffer(:,:,1:rem_mem),data_type),options.tiff_filename,opts_tiff);
                 end
         end        
+        end
         
         % update template
         fprintf('%i out of %i frames registered, iteration %i out of %i \n',t+lY-1,T,it,iter)

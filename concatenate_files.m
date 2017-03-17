@@ -52,6 +52,6 @@ for i = 1:numFiles
         case {'hdf5','h5'}
             h5write(filename,'/mov',Y_temp,[ones(1,nd),sum(ln(1:i-1))+1],size(Y_temp));
         case {'tif','tiff'}
-            saveastiff(cast(Y_temp,data_type),options.tiff_filename,opts_tiff);
+            saveastiff(cast(Y_temp,data_type),filename,opts_tiff);
     end         
 end
