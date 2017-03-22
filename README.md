@@ -53,6 +53,8 @@ Although the two implementations give almost identical results for the same inpu
 
 ## More details and citing NoRMCorre
 
+Check the [wiki](https://github.com/simonsfoundation/NoRMCorre/wiki) for more details and some frequently asked questions. 
+
 If you find this package useful please cite the following paper:
 
 Eftychios A. Pnevmatikakis and Andrea Giovannucci, *NoRMCorre: An online algorithm for piecewise rigid motion correction of calcium imaging data*, bioRxiv 108514; doi: [https://doi.org/10.1101/108514](https://doi.org/10.1101/108514)
