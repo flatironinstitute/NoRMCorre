@@ -26,8 +26,9 @@ Names = [
     'init_batch         ' % length of initial batch (default: 30)
     'bin_width          ' % width of each bin (default: 10)
     'buffer_width       ' % number of local means to keep in memory (default: 50)
-    'method             ' % method for averaging the template (default: {'median';'mean
+    'method             ' % method for averaging the template (default: {'median';'mean})
     'iter               ' % number of data passes (default: 1)
+    'boundary           ' % method of boundary treatment 'NaN','copy','zero','template' (default: 'NaN')
     % misc
     'add_value          ' % add dc value to data (default: 0)
     'use_parallel       ' % for each frame, update patches in parallel (default: false)
@@ -151,6 +152,7 @@ Values = [
     {50}                  % number of local means to keep in memory (default: 50)
     {{'median';'mean'}}   % method for averaging the template (default: {'median';'mean'}
     {1}                   % number of data passes (default: 1)
+    {'NaN'}               % method of boundary treatment (default: 'NaN')
     % misc
     {0}                   % add dc value to data (default: 0)
     {false}               % for each frame, update patches in parallel (default: false)

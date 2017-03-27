@@ -324,7 +324,7 @@ for it = 1:iter
                             %M_temp = real(ifftn(Greg));
                             %M_temp = remove_boundaries(M_temp,output(3:end),'none',template{i,j,k});                            
                             %M_fin{i,j,k} = remove_boundaries(M_temp,output(3:end),'NaN',template{i,j,k},add_value);
-                            M_fin{i,j,k} = shift_reconstruct(Yt,shifts_temp(i,j,k,:),diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'NaN',add_value);
+                            M_fin{i,j,k} = shift_reconstruct(Yt,shifts_temp(i,j,k,:),diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
                         end                                               
                     end
                 end
@@ -347,7 +347,7 @@ for it = 1:iter
                         for k = 1:length(zz_uf)
                             extended_grid = [max(xx_us(i)-overlap_post(1),1),min(xx_uf(i)+overlap_post(1),d1),max(yy_us(j)-overlap_post(2),1),min(yy_uf(j)+overlap_post(2),d2),max(zz_us(k)-overlap_post(3),1),min(zz_uf(k)+overlap_post(3),d3)];
                             I_temp = Yt(extended_grid(1):extended_grid(2),extended_grid(3):extended_grid(4),extended_grid(5):extended_grid(6));
-                            M_fin{i,j,k} = shift_reconstruct(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'NaN',add_value);
+                            M_fin{i,j,k} = shift_reconstruct(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
                         end
                     end
                 end

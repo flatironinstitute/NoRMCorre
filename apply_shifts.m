@@ -118,7 +118,7 @@ switch lower(options.output_type)
         error('This filetype is currently not supported')
 end 
 
-shift_fun = @(yfft,shfts,ph,nr,nc,np) shift_reconstruct(yfft,shfts,ph,options.us_fac,nr,nc,np,'NaN',0);
+shift_fun = @(yfft,shfts,ph,nr,nc,np) shift_reconstruct(yfft,shfts,ph,options.us_fac,nr,nc,np,options.boundary,0);
     % apply shift_reconstruct function to cells
 %%
 % if flag_constant;  
@@ -168,7 +168,7 @@ for t = 1:bin_width:T
 %             Yfft = Ytc{ii};
 %         end
         if all(options.mot_uf == 1)
-            M_fin = shift_reconstruct(Yfft{1},shifts_temp(ii).shifts,shifts_temp(ii).diff,options.us_fac,Nr{1},Nc{1},Np{1},'NaN',0);
+            M_fin = shift_reconstruct(Yfft{1},shifts_temp(ii).shifts,shifts_temp(ii).diff,options.us_fac,Nr{1},Nc{1},Np{1},options.boundary,0);
             Mf{ii} = M_fin;
         else
             shifts_up = shifts_temp(ii).shifts_up;
