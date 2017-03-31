@@ -39,15 +39,15 @@ if isa(Y,'char')
 elseif isobject(Y);
     filetype = 'mem';
     sizY = size(Y,'Y');
-    T = sizY(end);
+    T = sizY(end);    
 else % array loaded in memory
     filetype = 'mat';
     Y = single(Y);
     sizY = size(Y);
-    T = sizY(end);
+    T = size(Y,max(ndims(Y),3));
 end
 
-nd = length(sizY)-1;                          % determine whether imaging is 2d or 3d
+nd = max(length(sizY)-1,2);                    % determine whether imaging is 2d or 3d
 sizY = sizY(1:nd);
 %% set default parameters if not present
 
