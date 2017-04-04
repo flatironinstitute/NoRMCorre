@@ -108,7 +108,14 @@ switch lower(options.output_type)
         if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
         M_final.Yr(d1*d2*d3,T) = single(0);        
     case {'hdf5','h5'}
-        M_final = ['motion corrected file has been saved as ', options.h5_filename];
+        if exist(options.h5_filename,'file')
+            [pathstr,fname,ext] = fileparts(options.h5_filename);             
+            new_filename = fullfile(pathstr,[fname,'_',datestr(now,30),ext]);
+            warning_msg = ['File ',options.h5_filename,'already exists. Saving motion corrected file as',new_filename];            
+            warning('%s',warning_msg);
+            options.h5_filename = new_filename;
+        end   
+        M_final = options.h5_filename;
         if nd == 2
             h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype','single');
         elseif nd == 3
