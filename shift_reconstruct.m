@@ -20,14 +20,15 @@ else
     buf2ft = Y;
 end
 
-if nargin < 8 || isempty(add_value); add_value = 0; end
-if nargin < 7 || isempty(method); method = 'zero'; end
+if nargin < 9 || isempty(add_value); add_value = 0; end
+if nargin < 8 || isempty(method); method = 'zero'; end
+if nargin < 4 || isempty(us_fac); us_fac = 50; end
 
 [nr,nc,np]=size(Y);
 if any(shifts)
-    if nargin < 4 || isempty(Nr); Nr = ifftshift(-fix(nr/2):ceil(nr/2)-1); end
-    if nargin < 5 || isempty(Nc); Nc = ifftshift(-fix(nc/2):ceil(nc/2)-1); end
-    if nargin < 6 || isempty(Np); Np = ifftshift(-fix(np/2):ceil(np/2)-1); end
+    if nargin < 5 || isempty(Nr); Nr = ifftshift(-fix(nr/2):ceil(nr/2)-1); end
+    if nargin < 6 || isempty(Nc); Nc = ifftshift(-fix(nc/2):ceil(nc/2)-1); end
+    if nargin < 7 || isempty(Np); Np = ifftshift(-fix(np/2):ceil(np/2)-1); end
 
     %shifts = shiftdim(shifts,3);
     
