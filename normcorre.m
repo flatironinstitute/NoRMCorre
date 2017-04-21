@@ -6,7 +6,7 @@ function [M_final,shifts,template,options] = normcorre(Y,options,template)
 % INPUTS
 % Y:                Input data, can be already loaded in memory as a 3D
 %                   tensor, a memory mapped file, or a pointer to a tiff stack
-% options:          options structure for motion correction 
+% options:          options structure for motion correction (optional, rigid registration is performed if not provided)
 % template:         provide template (optional)
 
 % OUTPUTS
@@ -51,75 +51,33 @@ nd = max(length(sizY)-1,2);                    % determine whether imaging is 2d
 sizY = sizY(1:nd);
 %% set default parameters if not present
 
-defoptions.memmap = false;                     % save motion corrected file in a mat file
-if nd == 2
-    defoptions.grid_size = [128,128,1];       % size of each patch to be corrected separately
-elseif nd == 3
-    defoptions.grid_size = [64,64,16];
+if ~exist('options','var') || isempty(options);    
+    options = NoRMCorreSetParms('d1',sizY(1),'d2',sizY(2));
+    if nd > 2; options.d3 = sizY(3); end
 end
-if nd == 2
-    defoptions.mot_uf = [4,4,1];              % upsampling factor within each patch
-elseif nd == 3
-    defoptions.mot_uf = [2,2,1];
-end
-defoptions.min_patch_size = [32,32,16];             % minimum patch size 
-defoptions.overlap_pre = [16,16,2];                 % overlap between subsets within each patch
-defoptions.overlap_post = [8,8,2];                  % overlap between subsets within each patch
-defoptions.upd_template = true;                     % flag for updating template
-defoptions.bin_width = 10;                          % width of buffer for computing the moving template
-defoptions.buffer_width = 50;                       % number of local means to keep in memory
-defoptions.init_batch = 30;                         % length of initial batch
-defoptions.max_dev = [3,3,1];                       % maximum deviation around rigid translation
-defoptions.us_fac = 5;                              % upsampling factor for subpixel registration
-defoptions.method = {'median';'mean'};              % method for averaging the template
-defoptions.plot_flag = false;                       % flag for plotting results in real time
-defoptions.mem_filename = 'motion_corrected.mat';   % filename for motion corrected mat file
-defoptions.use_parallel = false;                    % use parfor when breaking each frame into patches
-defoptions.make_avi = false;                        % flag for making movie
-defoptions.name = 'motion_corrected.avi';           % name of saved movie
-defoptions.fr = 30;                                 % frame rate for saved movie
-defoptions.iter = 1;                                % number of passes over the data
-defoptions.add_value = 0;                           % add value to make dataset non-negative
-%defoptions.write_tiff = false;               % save output as a tiff stack
-%defoptions.out_name = 'motion_corrected.tif'; % name for output file name
 
-if nargin == 1 || isempty(options); options = defoptions; end
-
-if ~isfield(options,'memmap'); options.memmap = defoptions.memmap; end; memmap = options.memmap;
-if ~isfield(options,'grid_size'); options.grid_size = defoptions.grid_size; end; grid_size = options.grid_size; 
-if ~isfield(options,'mot_uf'); options.mot_uf = defoptions.mot_uf; end; mot_uf = options.mot_uf;
-if ~isfield(options,'min_patch_size'); options.min_patch_size = defoptions.min_patch_size; end; min_patch_size = options.min_patch_size;
-if ~isfield(options,'overlap_pre'); options.overlap_pre = defoptions.overlap_pre; end; overlap_pre = options.overlap_pre;
-if ~isfield(options,'overlap_post'); options.overlap_post = defoptions.overlap_post; end; overlap_post = options.overlap_post;
-if ~isfield(options,'upd_template'); options.upd_template = defoptions.upd_template; end; upd_template = options.upd_template;
-if ~isfield(options,'bin_width'); options.bin_width = defoptions.bin_width; end; bin_width = options.bin_width;
-if ~isfield(options,'buffer_width'); options.buffer_width = defoptions.buffer_width; end; buffer_width = options.buffer_width;
-if ~isfield(options,'max_dev'); options.max_dev = defoptions.max_dev; end; max_dev = options.max_dev;
-if ~isfield(options,'init_batch'); options.init_batch = defoptions.init_batch; end; init_batch = options.init_batch;
-if ~isfield(options,'us_fac'); options.us_fac = defoptions.us_fac; end; us_fac = options.us_fac;
-if ~isfield(options,'method'); options.method = defoptions.method; end; method = options.method;
-if ~isfield(options,'plot_flag'); options.plot_flag = defoptions.plot_flag; end; plot_flag = options.plot_flag*(nd==2);
-if ~isfield(options,'mem_filename'); options.mem_filename = defoptions.mem_filename; end; filename = options.mem_filename;
-if ~isfield(options,'use_parallel'); options.use_parallel = defoptions.use_parallel; end; use_parallel = options.use_parallel;
-if ~isfield(options,'make_avi'); options.make_avi = defoptions.make_avi; end; make_avi = options.make_avi;
-if ~isfield(options,'name'); options.name = defoptions.name; end; name = options.name;
-if ~isfield(options,'fr'); options.fr = defoptions.fr; end; fr = options.fr;
-if ~isfield(options,'iter'); options.iter = defoptions.iter; end; iter = options.iter;
-if ~isfield(options,'add_value'); options.add_value = defoptions.add_value; end; add_value = options.add_value;
-if isscalar(grid_size); grid_size = grid_size*ones(1,nd); end; if length(grid_size) == 2; grid_size(3) = 1; end
-if isscalar(mot_uf); mot_uf = mot_uf*ones(1,nd); end; if length(mot_uf) == 2; mot_uf(3) = 1; end
-if isscalar(overlap_pre); overlap_pre = overlap_pre*ones(1,nd); end; if length(overlap_pre) == 2; overlap_pre(3) = 1; end
-if isscalar(overlap_post); overlap_post = overlap_post*ones(1,nd); end; if length(overlap_post) == 2; overlap_post(3) = 1; end
-if isscalar(max_dev); max_dev = max_dev*ones(1,nd); end; if length(max_dev) == 2; max_dev(3) = 1; end
-
-if ~isfield(options,'max_shift'); 
-    max_shift = grid_size./mot_uf; 
-else
-    if isscalar(options.max_shift)
-        options.max_shift = options.max_shift*ones(1,3);
-    end
-    max_shift = min(options.max_shift,grid_size./mot_uf);
-end
+memmap = options.memmap;
+grid_size = options.grid_size; 
+mot_uf = options.mot_uf;
+min_patch_size = options.min_patch_size;
+overlap_pre = options.overlap_pre;
+overlap_post = options.overlap_post;
+upd_template = options.upd_template;
+bin_width = options.bin_width;
+buffer_width = options.buffer_width;
+max_dev = options.max_dev;
+init_batch = options.init_batch;
+us_fac = options.us_fac;
+method = options.method;
+plot_flag = options.plot_flag*(nd==2);
+filename = options.mem_filename;
+use_parallel = options.use_parallel;
+make_avi = options.make_avi;
+name = options.name;
+fr = options.fr;
+iter = options.iter;
+add_value = options.add_value;
+max_shift = options.max_shift;
 
 %% read initial batch and compute template
 init_batch = min(T,init_batch);

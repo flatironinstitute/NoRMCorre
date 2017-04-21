@@ -19,7 +19,7 @@ Names = [
     'mot_uf             ' % degree of patches upsampling (default: [4,4,1])
     'max_dev            ' % maximum deviation of patch shift from rigid shift (default: [3,3,1])
     'overlap_post       ' % size of overlapping region after upsampling (default: [32,32,16])
-    'max_shift          ' % maximum rigid shift in each direction (default: [10,10,5])
+    'max_shift          ' % maximum rigid shift in each direction (default: [15,15,5])
     'phase_flag         ' % flag for using phase correlation (default: false)
     % template updating
     'upd_template       ' % flag for online template updating (default: true)
@@ -28,7 +28,7 @@ Names = [
     'buffer_width       ' % number of local means to keep in memory (default: 50)
     'method             ' % method for averaging the template (default: {'median';'mean})
     'iter               ' % number of data passes (default: 1)
-    'boundary           ' % method of boundary treatment 'NaN','copy','zero','template' (default: 'NaN')
+    'boundary           ' % method of boundary treatment 'NaN','copy','zero','template' (default: 'copy')
     % misc
     'add_value          ' % add dc value to data (default: 0)
     'use_parallel       ' % for each frame, update patches in parallel (default: false)
@@ -139,20 +139,20 @@ Values = [
     {[]}                  % size of non-overlapping regions (default: [d1,d2,d3])
     {[32,32,16]}          % size of overlapping region (default: [32,32,16])
     {[32,32,16]}          % minimum size of patch (default: [32,32,16])    
-    {20}                  % upsampling factor for subpixel registration (default: 20)
+    {50}                  % upsampling factor for subpixel registration (default: 50)
     {[4,4,1]}             % degree of patches upsampling (default: [4,4,1])
     {[3,3,1]}             % maximum deviation of patch shift from rigid shift (default: [3,3,1])
     {[32,32,16]}          % size of overlapping region after upsampling (default: [32,32,16])
-    {[10,10,5]}           % maximum rigid shift in each direction
+    {[15,15,5]}           % maximum rigid shift in each direction
     {false}
     % template updating
     {true}                % flag for online template updating (default: true)
     {30}                  % length of initial batch (default: 30)
-    {10}                  % width of each bin (default: 10)
+    {50}                  % width of each bin (default: 10)
     {50}                  % number of local means to keep in memory (default: 50)
     {{'median';'mean'}}   % method for averaging the template (default: {'median';'mean'}
     {1}                   % number of data passes (default: 1)
-    {'NaN'}               % method of boundary treatment (default: 'NaN')
+    {'copy'}              % method of boundary treatment (default: 'copy')
     % misc
     {0}                   % add dc value to data (default: 0)
     {false}               % for each frame, update patches in parallel (default: false)
