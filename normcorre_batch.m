@@ -286,10 +286,8 @@ for it = 1:iter
                         shifts_temp(i,j,k,2) = output(4); 
                         diff_temp(i,j,k) = output(2);
                         if all(mot_uf == 1)
-                            %M_temp = real(ifftn(Greg));
-                            %M_temp = remove_boundaries(M_temp,output(3:end),'none',template{i,j,k});                            
-                            %M_fin{i,j,k} = remove_boundaries(M_temp,output(3:end),'NaN',template{i,j,k},add_value);
                             M_fin{i,j,k} = shift_reconstruct(Yt,shifts_temp(i,j,k,:),diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
+                            %M_fin{i,j,k} = shift_reconstruct2(Yt,shifts_temp(i,j,k,:),'bilinear',diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
                         end                                               
                     end
                 end
@@ -299,11 +297,17 @@ for it = 1:iter
             shifts(ii).diff = diff_temp;
         
             if any(mot_uf > 1)
-                shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
-                diff_up = imresize(diff_temp,[length(xx_uf),length(yy_uf)]);
-
-                if mot_uf(3) > 1
-                    shifts_up = reshape(imresize(reshape(shifts_up,[length(xx_uf)*length(yy_uf),length(zz_f),nd]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf),nd]);
+                shifts_temp = squeeze(shifts_temp);
+                diff_temp = squeeze(diff_temp);           
+                if mot_uf(3) > 1                
+                    tform = affine3d(diag([mot_uf(:);1]));
+                    diff_up = imwarp(diff_temp,tform,'OutputView',[length(xx_uf),length(yy_uf),length(zz_f)]);
+                    shifts_up = zeros([size(diff_up),3]);
+                    for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,[length(xx_uf),length(yy_uf),length(zz_f)]); end
+                else                    
+                    shifts_temp = permute(shifts_temp,[1,2,4,3]);
+                    shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
+                    diff_up = imresize(diff_temp,[length(xx_uf),length(yy_uf)]);                    
                 end
                 shifts(ii).shifts_up = shifts_up;
                 shifts(ii).diff = diff_up;
@@ -313,6 +317,7 @@ for it = 1:iter
                             extended_grid = [max(xx_us(i)-overlap_post(1),1),min(xx_uf(i)+overlap_post(1),d1),max(yy_us(j)-overlap_post(2),1),min(yy_uf(j)+overlap_post(2),d2),max(zz_us(k)-overlap_post(3),1),min(zz_uf(k)+overlap_post(3),d3)];
                             I_temp = Yt(extended_grid(1):extended_grid(2),extended_grid(3):extended_grid(4),extended_grid(5):extended_grid(6));
                             M_fin{i,j,k} = shift_reconstruct(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
+                            %M_fin{i,j,k} = shift_reconstruct2(I_temp,shifts_up(i,j,k,:),'bilinear',diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
                         end
                     end
                 end

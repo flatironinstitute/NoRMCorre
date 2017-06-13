@@ -17,6 +17,8 @@ function [M_final,shifts,template,options] = normcorre(Y,options,template)
 
 %% first determine filetype
 
+nd = 2 + (options.d3 > 1); %max(length(sizY)-1,2);                    % determine whether imaging is 2d or 3d
+
 if isa(Y,'char')
     [~,~,ext] = fileparts(Y);
     ext = ext(2:end);
@@ -24,37 +26,47 @@ if isa(Y,'char')
         tiffInfo = imfinfo(Y);
         filetype = 'tif';
         T = length(tiffInfo);
-        sizY = [tiffInfo(1).Height,tiffInfo(1).Width,T];
+        if nd == 3
+            sizY = [tiffInfo(1).Height,tiffInfo(1).Width,T,1];
+        else
+            sizY = [tiffInfo(1).Height,tiffInfo(1).Width,T];
+        end
     elseif strcmpi(ext,'mat')
         filetype = 'mem';
         Y = matfile(Y,'Writable',true);
         sizY = size(Y);
-        T = sizY(end);
     elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5');
         filetype = 'hdf5';
         fileinfo = hdf5info(Y);
         sizY = fileinfo.GroupHierarchy.Datasets.Dims;
-        T = sizY(end);
     end    
 elseif isobject(Y);
     filetype = 'mem';
     sizY = size(Y,'Y');
-    T = sizY(end);    
 else % array loaded in memory
     filetype = 'mat';
     Y = single(Y);
-    sizY = size(Y);
-    T = size(Y,max(ndims(Y),3));
+    sizY = size(Y);    
 end
 
-nd = max(length(sizY)-1,2);                    % determine whether imaging is 2d or 3d
+if length(sizY) == nd
+    T = 1;
+else
+    T = sizY(nd+1);
+end
 sizY = sizY(1:nd);
+
 %% set default parameters if not present
 
 if ~exist('options','var') || isempty(options);    
     options = NoRMCorreSetParms('d1',sizY(1),'d2',sizY(2));
     if nd > 2; options.d3 = sizY(3); end
 end
+
+options.bin_width = min(options.bin_width,T+1);
+options.mem_batch_size = min(options.mem_batch_size,T);
+options.buffer_width = min(options.buffer_width,ceil(T/options.bin_width));
+options.init_batch = min(options.init_batch,T);
 
 memmap = options.memmap;
 grid_size = options.grid_size; 
@@ -80,8 +92,10 @@ add_value = options.add_value;
 max_shift = options.max_shift;
 
 %% read initial batch and compute template
-init_batch = min(T,init_batch);
 perm = randperm(T,init_batch);
+if exist('template','var');
+    init_batch = min(init_batch,1);
+end
 switch filetype
     case 'tif'
         Y1 = imread(Y,'Index',1,'Info',tiffInfo);
@@ -257,7 +271,7 @@ for it = 1:iter
                         end                                               
                     end
                 end
-            end            
+            end      
         else
             Mt2 = cell(length(xx_s)*length(yy_s)*length(zz_s),1);            
             shifts_cell = cell(length(xx_s)*length(yy_s)*length(zz_s),1); 
@@ -287,14 +301,18 @@ for it = 1:iter
         shifts(t).diff = diff_temp;
         
         if any(mot_uf > 1)
-            shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
-            diff_up = imresize(diff_temp,[length(xx_uf),length(yy_uf)]);
-%             shifts_up(:,:,:,1) = bound_shifts(shifts_up(:,:,:,1),0.5);
-%             shifts_up(:,:,:,2) = bound_shifts(shifts_up(:,:,:,2),0.5);
-            %if 
-            if mot_uf(3) > 1
-                shifts_up = reshape(imresize(reshape(shifts_up,[length(xx_uf)*length(yy_uf),length(zz_f),nd]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf),nd]);
-                diff_up = reshape(imresize(reshape(diff_up,[length(xx_uf)*length(yy_uf),length(zz_f)]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf)]);
+            shifts_temp = squeeze(shifts_temp);
+            diff_temp = squeeze(diff_temp);           
+            if mot_uf(3) > 1                
+                tform = affine3d(diag([mot_uf(:);1]));
+                diff_up = imwarp(diff_temp,tform,'OutputView',[length(xx_uf),length(yy_uf),length(zz_f)]);
+                shifts_up = zeros([size(diff_up),3]);
+                for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,[length(xx_uf),length(yy_uf),length(zz_f)]); end
+                %shifts_up = reshape(imresize(reshape(shifts_up,[length(xx_uf)*length(yy_uf),length(zz_f),nd]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf),nd]);
+                %diff_up = reshape(imresize(reshape(diff_up,[length(xx_uf)*length(yy_uf),length(zz_f)]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf)]);
+            else
+                shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
+                diff_up = imresize(diff_temp,[length(xx_uf),length(yy_uf)]);
             end
             shifts(t).shifts_up = shifts_up;
             shifts(t).diff = diff_up;
@@ -303,7 +321,8 @@ for it = 1:iter
                     for k = 1:length(zz_uf)
                         extended_grid = [max(xx_us(i)-overlap_post(1),1),min(xx_uf(i)+overlap_post(1),d1),max(yy_us(j)-overlap_post(2),1),min(yy_uf(j)+overlap_post(2),d2),max(zz_us(k)-overlap_post(3),1),min(zz_uf(k)+overlap_post(3),d3)];
                         I_temp = Yt(extended_grid(1):extended_grid(2),extended_grid(3):extended_grid(4),extended_grid(5):extended_grid(6));
-                        M_fin{i,j,k} = shift_reconstruct(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
+                        M_fin{i,j,k} = shift_reconstruct(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);                        
+                        %M_fin{i,j,k} = shift_reconstruct2(I_temp,shifts_up(i,j,k,:),'bilinear',diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
                     end
                 end
             end
@@ -311,9 +330,6 @@ for it = 1:iter
             shifts_up = shifts_temp;
             shifts(t).shifts_up = shifts(t).shifts;
         end
-%         ss = squeeze(shifts_up(:,:,t,:));
-%         SS = mat2cell(ss,ones(size(ss,1),1),ones(size(ss,2),1),2);
-%         Ic = mat2cell_ov(Yt,grid_size_fine,overlap_post);
 
         gx = max(abs(reshape(diff(shifts_up,[],1),[],1)));
         gy = max(abs(reshape(diff(shifts_up,[],2),[],1)));

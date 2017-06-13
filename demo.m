@@ -13,7 +13,7 @@ if ~exist(name,'file')  % download file if it doesn't exist in the directory
 end
 
 tic; Y = read_file(name); toc; % read the file (optional, you can also pass the path in the function instead of Y)
-Y = double(Y);      % convert to double precision 
+Y = single(Y);                 % convert to single precision 
 T = size(Y,ndims(Y));
 %Y = Y - min(Y(:));
 %% set parameters (first try out rigid motion correction)
