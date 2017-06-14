@@ -104,9 +104,9 @@ switch lower(options.output_type)
         M_final = zeros([sizY(1:nd),T]);
     case 'memmap'
         M_final = matfile(options.mem_filename,'Writable',true);
-        if nd == 2; M_final.Y(d1,d2,T) = single(0); end
-        if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
-        M_final.Yr(d1*d2*d3,T) = single(0);        
+        if nd == 2; M_final.Y(d1,d2,T) = cast(single(0),'like',M_final.Y); end
+        if nd == 3; M_final.Y(d1,d2,d3,T) = cast(single(0),'like',M_final.Y); end
+        M_final.Yr(d1*d2*d3,T) = cast(single(0),'like',M_final.Y);        
     case {'hdf5','h5'}
         if exist(options.h5_filename,'file')
             [pathstr,fname,ext] = fileparts(options.h5_filename);             
@@ -212,9 +212,9 @@ for t = 1:bin_width:T
             if nd == 2; M_final(:,:,t:min(t+bin_width-1,T)) = Mf; end
             if nd == 3; M_final(:,:,:,t:min(t+bin_width-1,T)) = Mf; end
         case 'memmap'
-            if nd == 2; M_final.Y(:,:,t:min(t+bin_width-1,T)) = Mf; end
-            if nd == 3; M_final.Y(:,:,:,t:min(t+bin_width-1,T)) = Mf; end
-            M_final.Yr(:,t:min(t+bin_width-1,T)) = reshape(Mf,d1*d2*d3,[]);
+            if nd == 2; M_final.Y(:,:,t:min(t+bin_width-1,T)) = cast(Mf,'like',M_final.Y); end
+            if nd == 3; M_final.Y(:,:,:,t:min(t+bin_width-1,T)) = cast(Mf,'like',M_final.Y); end
+            M_final.Yr(:,t:min(t+bin_width-1,T)) = cast(reshape(Mf,d1*d2*d3,[]),'like',M_final.Yr);
         case {'hdf5','h5'}
             rem_mem = min(bin_width,T-t+1);
             if nd == 2; h5write(options.h5_filename,['/',options.h5_groupname],Mf,[ones(1,nd),t],[sizY(1:nd),rem_mem]); end
