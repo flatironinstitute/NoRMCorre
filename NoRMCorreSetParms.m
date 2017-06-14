@@ -21,6 +21,7 @@ Names = [
     'overlap_post       ' % size of overlapping region after upsampling (default: [32,32,16])
     'max_shift          ' % maximum rigid shift in each direction (default: [15,15,5])
     'phase_flag         ' % flag for using phase correlation (default: false)
+    'shifts_method      ' % method to apply shifts ('FFT','cubic','linear')
     % template updating
     'upd_template       ' % flag for online template updating (default: true)
     'init_batch         ' % length of initial batch (default: 30)
@@ -144,7 +145,8 @@ Values = [
     {[3,3,1]}             % maximum deviation of patch shift from rigid shift (default: [3,3,1])
     {[32,32,16]}          % size of overlapping region after upsampling (default: [32,32,16])
     {[15,15,5]}           % maximum rigid shift in each direction
-    {false}
+    {false}               % use phase correlation (good for high SNR)
+    {'FFT'}               % method for applying shifts ('FFT', 'linear', 'cubic')
     % template updating
     {true}                % flag for online template updating (default: true)
     {30}                  % length of initial batch (default: 30)

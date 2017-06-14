@@ -356,9 +356,9 @@ for it = 1:iter
                 if nd == 3; M_final(:,:,:,t:min(t+bin_width-1,T)) = Mf; end
             case 'memmap'
                 if rem_mem == options.mem_batch_size || t+lY-1 == T
-                    if nd == 2; M_final.Y(:,:,t+lY-rem_mem:t+lY-1) = mem_buffer(:,:,1:rem_mem); end
-                    if nd == 3; M_final.Y(:,:,:,t+lY-rem_mem:t+lY-1) = mem_buffer(:,:,:,1:rem_mem); end
-                    M_final.Yr(:,t+lY-rem_mem:t+lY-1) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
+                    if nd == 2; M_final.Y(:,:,t+lY-rem_mem:t+lY-1) = cast(mem_buffer(:,:,1:rem_mem),data_type); end
+                    if nd == 3; M_final.Y(:,:,:,t+lY-rem_mem:t+lY-1) = cast(mem_buffer(:,:,:,1:rem_mem),data_type); end
+                    M_final.Yr(:,t+lY-rem_mem:t+lY-1) = cast(reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem),data_type);
                 end      
             case {'hdf5','h5'}
                 if rem_mem == options.mem_batch_size || t+lY-1 == T

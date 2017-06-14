@@ -311,6 +311,7 @@ for it = 1:iter
                 %shifts_up = reshape(imresize(reshape(shifts_up,[length(xx_uf)*length(yy_uf),length(zz_f),nd]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf),nd]);
                 %diff_up = reshape(imresize(reshape(diff_up,[length(xx_uf)*length(yy_uf),length(zz_f)]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf)]);
             else
+                shifts_temp = permute(shifts_temp,[1,2,4,3]);
                 shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
                 diff_up = imresize(diff_temp,[length(xx_uf),length(yy_uf)]);
             end
@@ -356,9 +357,9 @@ for it = 1:iter
                 if nd == 3; M_final(:,:,:,t) = Mf; end
             case 'memmap'
                 if rem_mem == options.mem_batch_size || t == T
-                    if nd == 2; M_final.Y(:,:,t-rem_mem+1:t) = mem_buffer(:,:,1:rem_mem); end
-                    if nd == 3; M_final.Y(:,:,:,t-rem_mem+1:t) = mem_buffer(:,:,:,1:rem_mem); end
-                    M_final.Yr(:,t-rem_mem+1:t) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
+                    if nd == 2; M_final.Y(:,:,t-rem_mem+1:t) = cast(mem_buffer(:,:,1:rem_mem),data_type); end
+                    if nd == 3; M_final.Y(:,:,:,t-rem_mem+1:t) = cast(mem_buffer(:,:,:,1:rem_mem),data_type); end
+                    M_final.Yr(:,t-rem_mem+1:t) = cast(reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem),data_type);
                 end      
             case {'hdf5','h5'}
                 if rem_mem == options.mem_batch_size || t== T
