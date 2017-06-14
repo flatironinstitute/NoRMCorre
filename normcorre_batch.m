@@ -301,9 +301,9 @@ for it = 1:iter
                 diff_temp = squeeze(diff_temp);           
                 if mot_uf(3) > 1                
                     tform = affine3d(diag([mot_uf(:);1]));
-                    diff_up = imwarp(diff_temp,tform,'OutputView',[length(xx_uf),length(yy_uf),length(zz_f)]);
+                    diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_f)]));
                     shifts_up = zeros([size(diff_up),3]);
-                    for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,[length(xx_uf),length(yy_uf),length(zz_f)]); end
+                    for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_f)])); end
                 else                    
                     shifts_temp = permute(shifts_temp,[1,2,4,3]);
                     shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
