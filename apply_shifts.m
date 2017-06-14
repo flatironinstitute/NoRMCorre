@@ -23,15 +23,19 @@ if isa(Y,'char')
         tiffInfo = imfinfo(Y);
         sizY = [tiffInfo(1).Height,tiffInfo(1).Width,length(tiffInfo)];
         filetype = 'tif';
+        data_type = class(imread(Y,'Index',1,'Info',tiffInfo));
     elseif strcmpi(ext,'mat')
         filetype = 'mem';
         Y = matfile(Y,'Writable',true);
-        sizY = size(Y);
+        sizY = size(Y,'Y');
+        details = whos(Y,'Y');
+        data_type = details.class;
     elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5');
         filetype = 'hdf5';
         fileinfo = hdf5info(Y);
         data_name = fileinfo.GroupHierarchy.Datasets.Name;
         sizY = fileinfo.GroupHierarchy.Datasets.Dims;
+        data_type = class(read_file(Y,1,1));
     elseif strcmpi(ext,'raw')
         filetype = 'raw';
         fid = fopen(Y);
@@ -45,12 +49,16 @@ if isa(Y,'char')
         T = file_length/imsize;
         sizY = [FOV,T];
         fclose(fid);
+        data_type = 'single';
     end    
 elseif isobject(Y);
     filetype = 'mem';
     sizY = size(Y,'Y');
+    details = whos(Y,'Y');
+    data_type = details.class;
 else % array loaded in memory
     filetype = 'mat';
+    data_type = class(Y);
     Y = single(Y);
     sizY = size(Y);
 end
@@ -101,12 +109,12 @@ if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
 
 switch lower(options.output_type)
     case 'mat'
-        M_final = zeros([sizY(1:nd),T]);
+        M_final = zeros([sizY(1:nd),T],data_type);
     case 'memmap'
         M_final = matfile(options.mem_filename,'Writable',true);
-        if nd == 2; M_final.Y(d1,d2,T) = single(0); end
-        if nd == 3; M_final.Y(d1,d2,d3,T) = single(0); end
-        M_final.Yr(d1*d2*d3,T) = single(0);        
+        if nd == 2; M_final.Y(d1,d2,T) = zeros(1,data_type); end
+        if nd == 3; M_final.Y(d1,d2,d3,T) = zeros(1,data_type); end
+        M_final.Yr(d1*d2*d3,T) = zeros(1,data_type);        
     case {'hdf5','h5'}
         if exist(options.h5_filename,'file')
             [pathstr,fname,ext] = fileparts(options.h5_filename);             
@@ -117,9 +125,9 @@ switch lower(options.output_type)
         end   
         M_final = options.h5_filename;
         if nd == 2
-            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype','single');
+            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,Inf],'Chunksize',[d1,d2,options.mem_batch_size],'Datatype',data_type);
         elseif nd == 3
-            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype','single');
+            h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype',data_type);
         end
     otherwise
         error('This filetype is currently not supported')
@@ -205,7 +213,7 @@ for t = 1:bin_width:T
         Mf{ii}(Mf{ii}<minY) = minY;
         Mf{ii}(Mf{ii}>maxY) = maxY;        
     end
-    Mf = single(cell2mat(Mf));
+    Mf = cast(cell2mat(Mf),data_type);
     
     switch lower(options.output_type)
         case 'mat'
