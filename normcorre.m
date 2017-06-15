@@ -118,7 +118,7 @@ Y_temp = single(Y_temp);
 if nargin < 3 || isempty(template)
     template_in = median(Y_temp,nd+1)+add_value;
 else
-    template_in = template + add_value;
+    template_in = single(template + add_value);
 end
 
 [d1,d2,d3,~] = size(Y_temp);
@@ -126,7 +126,7 @@ if nd == 2; d3 = 1; end
 %% setup grids for patches
 
 [xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf] = construct_grid(grid_size,mot_uf,d1,d2,d3,min_patch_size);
-shifts = struct('shifts',cell(T,1),'shifts_up',cell(T,1));
+shifts = struct('shifts',cell(T,1),'shifts_up',cell(T,1),'diff',cell(T,1));
 temp_cell = mat2cell_ov(template_in,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY);
 
 %% precompute some quantities that are used repetitively for template matching and applying shifts
@@ -167,7 +167,7 @@ end
 
 switch lower(options.output_type)
     case 'mat'
-        M_final = zeros([sizY,T]);
+        M_final = zeros([sizY,T],data_type);
     case 'memmap'
         M_final = matfile(filename,'Writable',true);
         if nd == 2; M_final.Y(d1,d2,T) = zeros(1,data_type); end
@@ -297,54 +297,65 @@ for it = 1:iter
                  diff_temp(i,j,k) = diff_cell{ii};
             end            
         end     
-        shifts(t).shifts = squeeze(shifts_temp);
+        shifts(t).shifts = shifts_temp;
         shifts(t).diff = diff_temp;
         
-        if any(mot_uf > 1)
-            shifts_temp = squeeze(shifts_temp);
-            diff_temp = squeeze(diff_temp);           
-            if mot_uf(3) > 1                
-                tform = affine3d(diag([mot_uf(:);1]));
-                diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]));
-                shifts_up = zeros([size(diff_up),3]);
-                for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)])); end
-                %shifts_up = reshape(imresize(reshape(shifts_up,[length(xx_uf)*length(yy_uf),length(zz_f),nd]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf),nd]);
-                %diff_up = reshape(imresize(reshape(diff_up,[length(xx_uf)*length(yy_uf),length(zz_f)]),[length(xx_uf)*length(yy_uf),length(zz_uf)]),[length(xx_uf),length(yy_uf),length(zz_uf)]);
-            else
-                shifts_temp = permute(shifts_temp,[1,2,4,3]);
-                shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
-                diff_up = imresize(diff_temp,[length(xx_uf),length(yy_uf)]);
-            end
-            shifts(t).shifts_up = shifts_up;
-            shifts(t).diff = diff_up;
-            for i = 1:length(xx_uf)
-                for j = 1:length(yy_uf)
-                    for k = 1:length(zz_uf)
-                        extended_grid = [max(xx_us(i)-overlap_post(1),1),min(xx_uf(i)+overlap_post(1),d1),max(yy_us(j)-overlap_post(2),1),min(yy_uf(j)+overlap_post(2),d2),max(zz_us(k)-overlap_post(3),1),min(zz_uf(k)+overlap_post(3),d3)];
-                        I_temp = Yt(extended_grid(1):extended_grid(2),extended_grid(3):extended_grid(4),extended_grid(5):extended_grid(6));
-                        M_fin{i,j,k} = shift_reconstruct(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);                        
-                        %M_fin{i,j,k} = shift_reconstruct2(I_temp,shifts_up(i,j,k,:),'bilinear',diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
+        switch lower(options.shifts_method)
+            case 'fft'
+                if any(mot_uf > 1)
+                    if ~isfield(options,'shifts_method'); options.shifts_method = 'FFT'; end                                         
+                    if mot_uf(3) > 1                
+                        tform = affine3d(diag([mot_uf(:);1]));
+                        diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]));
+                        shifts_up = zeros([size(diff_up),3]);
+                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)])); end
+                    else
+                        shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
+                        diff_up = imresize(diff_temp,[length(xx_uf),length(yy_uf)]);
                     end
+
+                    shifts(t).shifts_up = shifts_up;
+                    shifts(t).diff = diff_up;
+                    for i = 1:length(xx_uf)
+                        for j = 1:length(yy_uf)
+                            for k = 1:length(zz_uf)
+                                extended_grid = [max(xx_us(i)-overlap_post(1),1),min(xx_uf(i)+overlap_post(1),d1),max(yy_us(j)-overlap_post(2),1),min(yy_uf(j)+overlap_post(2),d2),max(zz_us(k)-overlap_post(3),1),min(zz_uf(k)+overlap_post(3),d3)];
+                                I_temp = Yt(extended_grid(1):extended_grid(2),extended_grid(3):extended_grid(4),extended_grid(5):extended_grid(6));
+                                M_fin{i,j,k} = shift_reconstruct(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);                        
+                                %M_fin{i,j,k} = shift_reconstruct2(I_temp,shifts_up(i,j,k,:),'bilinear',diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
+                            end
+                        end
+                    end                        
+                else
+                    shifts_up = shifts_temp;
+                    shifts(t).shifts_up = shifts(t).shifts;
                 end
-            end
-        else
-            shifts_up = shifts_temp;
-            shifts(t).shifts_up = shifts(t).shifts;
-        end
+                gx = max(abs(reshape(diff(shifts_up,[],1),[],1)));
+                gy = max(abs(reshape(diff(shifts_up,[],2),[],1)));
+                gz = max(abs(reshape(diff(shifts_up,[],3),[],1)));
+                flag_interp = max([gx;gy;gz;0])<0.5;      % detect possible smearing
 
-        gx = max(abs(reshape(diff(shifts_up,[],1),[],1)));
-        gy = max(abs(reshape(diff(shifts_up,[],2),[],1)));
-        gz = max(abs(reshape(diff(shifts_up,[],3),[],1)));
-        flag_interp = max([gx;gy;gz;0])<0.5;      % detect possible smearing
-
-        if flag_interp    
-            Mf = cell2mat_ov_sum(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY,Bs) - add_value;
-        else            
-            Mf = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY) - add_value;
-        end
+                if flag_interp    
+                    Mf = cell2mat_ov_sum(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY,Bs) - add_value;
+                else            
+                    Mf = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY) - add_value;
+                end
+                Mf(Mf<minY) = minY;
+                Mf(Mf>maxY) = maxY;               
         
-        Mf(Mf<minY) = minY;
-        Mf(Mf>maxY) = maxY;
+            otherwise
+                shifts(t).shifts_up = shifts(t).shifts;
+                if mot_uf(3) > 1                
+                    tform = affine3d(diag([mot_uf(:);1]));
+                    shifts_up = zeros([options.d1,options.d2,options.d3,3]);
+                    for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                    Mf = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method); 
+                else
+                    shifts_up = imresize(shifts_temp,[options.d1,options.d2]);
+                    Mf = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
+                end                    
+        end        
+            
         if ~strcmpi(options.output_type,'mat')
             rem_mem = rem(t,options.mem_batch_size);
             if rem_mem == 0; rem_mem = options.mem_batch_size; end            
@@ -353,13 +364,13 @@ for it = 1:iter
         end
         switch lower(options.output_type)
             case 'mat'
-                if nd == 2; M_final(:,:,t) = Mf; end
-                if nd == 3; M_final(:,:,:,t) = Mf; end
+                if nd == 2; M_final(:,:,t) = cast(Mf,data_type); end
+                if nd == 3; M_final(:,:,:,t) = cast(Mf,data_type); end
             case 'memmap'
                 if rem_mem == options.mem_batch_size || t == T
-                    if nd == 2; M_final.Y(:,:,t-rem_mem+1:t) = cast(mem_buffer(:,:,1:rem_mem),data_type); end
-                    if nd == 3; M_final.Y(:,:,:,t-rem_mem+1:t) = cast(mem_buffer(:,:,:,1:rem_mem),data_type); end
-                    M_final.Yr(:,t-rem_mem+1:t) = cast(reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem),data_type);
+                    if nd == 2; M_final.Y(:,:,t-rem_mem+1:t) = mem_buffer(:,:,1:rem_mem); end
+                    if nd == 3; M_final.Y(:,:,:,t-rem_mem+1:t) = mem_buffer(:,:,:,1:rem_mem); end
+                    M_final.Yr(:,t-rem_mem+1:t) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
                 end      
             case {'hdf5','h5'}
                 if rem_mem == options.mem_batch_size || t== T
