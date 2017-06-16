@@ -284,7 +284,7 @@ for it = 1:iter
                         shifts_temp(i,j,k,1) = output(3);
                         shifts_temp(i,j,k,2) = output(4); 
                         diff_temp(i,j,k) = output(2);
-                        if all(mot_uf == 1)
+                        if all([length(xx_s),length(yy_s),length(zz_s)] == 1)
                             M_fin{i,j,k} = shift_reconstruct(Yt,shifts_temp(i,j,k,:),diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
                         end                                               
                     end
@@ -295,7 +295,7 @@ for it = 1:iter
             shifts(ii).diff = diff_temp;
             switch lower(options.shifts_method)
                 case 'fft'
-                    if any(mot_uf > 1)          
+                    if any([length(xx_s),length(yy_s),length(zz_s)] > 1)          
                         if mot_uf(3) > 1                
                             tform = affine3d(diag([mot_uf(:);1]));
                             diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]));
@@ -336,7 +336,7 @@ for it = 1:iter
             
                 otherwise
                     shifts(ii).shifts_up = shifts(ii).shifts;
-                    if mot_uf(3) > 1                
+                    if nd == 3                
                         tform = affine3d(diag([mot_uf(:);1]));
                         shifts_up = zeros([options.d1,options.d2,options.d3,3]);
                         for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end

@@ -1,6 +1,6 @@
 function M_final = apply_shifts(Y,shifts,options,td1,td2,td3)
 
-% apply shifts using fft interpolation
+% apply shifts using fft/cubic or linear interpolation
 
 % INPUTS
 % Y:                Input data, can be already loaded in memory as a 3D
@@ -76,36 +76,38 @@ end
 d1 = sizY(1); d2 = sizY(2);
 if nd == 2; d3 = 1; else d3 = sizY(3); end
 
-%% precompute some quantities that are used repetitively for template matching and applying shifts
+if strcmpi(options.shifts_method,'fft');
+    % precompute some quantities that are used repetitively for template matching and applying shifts
 
-[xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf] = construct_grid(options.grid_size,options.mot_uf,options.d1,options.d2,options.d3,options.min_patch_size);
-xx_us = xx_us + td1; xx_us(1) = 1;
-yy_us = yy_us + td2; yy_us(1) = 1;
-zz_us = zz_us + td3; zz_us(1) = 1;
-xx_uf = xx_uf + td1; xx_uf(end) = d1;
-yy_uf = yy_uf + td2; yy_uf(end) = d2;
-zz_uf = zz_uf + td3; zz_uf(end) = d3;
+    [xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf] = construct_grid(options.grid_size,options.mot_uf,options.d1,options.d2,options.d3,options.min_patch_size);
+    xx_us = xx_us + td1; xx_us(1) = 1;
+    yy_us = yy_us + td2; yy_us(1) = 1;
+    zz_us = zz_us + td3; zz_us(1) = 1;
+    xx_uf = xx_uf + td1; xx_uf(end) = d1;
+    yy_uf = yy_uf + td2; yy_uf(end) = d2;
+    zz_uf = zz_uf + td3; zz_uf(end) = d3;
 
-%M_fin = 
-temp_cell = mat2cell_ov(zeros(d1,d2,d3,'single'),xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
-Nr = cell(size(temp_cell));
-Nc = cell(size(temp_cell));
-Np = cell(size(temp_cell));
-Bs = cell(size(temp_cell));
-for i = 1:length(xx_us)
-    for j = 1:length(yy_us)
-        for k = 1:length(zz_us)
-            [nr,nc,np] = size(temp_cell{i,j,k});
-            nr = ifftshift(-fix(nr/2):ceil(nr/2)-1);
-            nc = ifftshift(-fix(nc/2):ceil(nc/2)-1);
-            np = ifftshift(-fix(np/2):ceil(np/2)-1);
-            [Nc{i,j,k},Nr{i,j,k},Np{i,j,k}] = meshgrid(nc,nr,np);
-            extended_grid = [max(xx_us(i)-options.overlap_post(1),1),min(xx_uf(i)+options.overlap_post(1),d1),max(yy_us(j)-options.overlap_post(2),1),min(yy_uf(j)+options.overlap_post(2),d2),max(zz_us(k)-options.overlap_post(3),1),min(zz_uf(k)+options.overlap_post(3),d3)];            
-            Bs{i,j,k} = permute(construct_weights([xx_us(i),xx_uf(i),yy_us(j),yy_uf(j),zz_us(k),zz_uf(k)],extended_grid),[2,1,3]); 
+    temp_cell = mat2cell_ov(zeros(d1,d2,d3,'single'),xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
+    Nr = cell(size(temp_cell));
+    Nc = cell(size(temp_cell));
+    Np = cell(size(temp_cell));
+    Bs = cell(size(temp_cell));
+    for i = 1:length(xx_us)
+        for j = 1:length(yy_us)
+            for k = 1:length(zz_us)
+                [nr,nc,np] = size(temp_cell{i,j,k});
+                nr = ifftshift(-fix(nr/2):ceil(nr/2)-1);
+                nc = ifftshift(-fix(nc/2):ceil(nc/2)-1);
+                np = ifftshift(-fix(np/2):ceil(np/2)-1);
+                [Nc{i,j,k},Nr{i,j,k},Np{i,j,k}] = meshgrid(nc,nr,np);
+                extended_grid = [max(xx_us(i)-options.overlap_post(1),1),min(xx_uf(i)+options.overlap_post(1),d1),max(yy_us(j)-options.overlap_post(2),1),min(yy_uf(j)+options.overlap_post(2),d2),max(zz_us(k)-options.overlap_post(3),1),min(zz_uf(k)+options.overlap_post(3),d3)];            
+                Bs{i,j,k} = permute(construct_weights([xx_us(i),xx_uf(i),yy_us(j),yy_uf(j),zz_us(k),zz_uf(k)],extended_grid),[2,1,3]); 
+            end
         end
     end
+    if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
+    shift_fun = @(yfft,shfts,ph,nr,nc,np) shift_reconstruct(yfft,shfts,ph,options.us_fac,nr,nc,np,options.boundary,0);
 end
-if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
 
 switch lower(options.output_type)
     case 'mat'
@@ -133,15 +135,7 @@ switch lower(options.output_type)
         error('This filetype is currently not supported')
 end 
 
-shift_fun = @(yfft,shfts,ph,nr,nc,np) shift_reconstruct(yfft,shfts,ph,options.us_fac,nr,nc,np,options.boundary,0);
-    % apply shift_reconstruct function to cells
-%%
-% if flag_constant;  
-%     Yc = mat2cell_ov(Y,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
-%     Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
-%     minY = min(Y(:));
-%     maxY = max(Y(:));
-% end
+
 bin_width = min([options.mem_batch_size,T,ceil((512^2*3000)/(d1*d2*d3))]);
 for t = 1:bin_width:T
     switch filetype
@@ -164,55 +158,59 @@ for t = 1:bin_width:T
 %    if ~flag_constant
     if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,3))); end
     if nd == 3; Ytc = mat2cell(Ytm,d1,d2,d3,ones(1,size(Ytm,4))); end
-%     else
-%         Ytc = repmat({Yfft},size(Ytm,nd+1),1);
-%     end
     
     Mf = cell(size(Ytc));
     lY = length(Ytc);
     shifts_temp = shifts(t:t+lY-1);
     
-    parfor ii = 1:lY                
-        shifts_temp(ii).diff(:) = 0;
-%        if ~flag_constant            
-        Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
-        Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
-        minY = min(Ytc{ii}(:));
-        maxY = max(Ytc{ii}(:));
-%         else
-%             Yfft = Ytc{ii};
-%         end
-        if all(options.mot_uf == 1)
-            M_fin = shift_reconstruct(Yfft{1},shifts_temp(ii).shifts,shifts_temp(ii).diff,options.us_fac,Nr{1},Nc{1},Np{1},options.boundary,0);
-            Mf{ii} = M_fin;
-        else
-            shifts_up = shifts_temp(ii).shifts_up;
-%             M_fin = cell(length(xx_uf),length(yy_uf),length(zz_uf));             
-%             for i = 1:length(xx_uf)
-%                 for j = 1:length(yy_uf)
-%                     for k = 1:length(zz_uf)                  
-%                          M_fin{i,j,k} = shift_reconstruct(Yfft{i,j,k},shifts_up(i,j,k,:),shifts(ii).diff(i,j,k),options.us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'NaN',0);
-%                     end
-%                 end
-%             end
-            shifts_cell = mat2cell(shifts_up,ones(length(xx_uf),1),ones(length(yy_uf),1),ones(length(zz_uf),1),nd);
-            diff_cell = num2cell(shifts_temp(ii).diff);
-            M_fin = cellfun(shift_fun,Yfft,shifts_cell,diff_cell,Nr,Nc,Np,'un',0);
-            
-            gx = max(abs(reshape(diff(shifts_up,[],1),[],1)));
-            gy = max(abs(reshape(diff(shifts_up,[],2),[],1)));
-            gz = max(abs(reshape(diff(shifts_up,[],3),[],1)));
-            flag_interp = max([gx;gy;gz;0])<0.5;      % detect possible smearing
+      
+    switch lower(options.shifts_method)
+        case 'fft'
+            parfor ii = 1:lY 
+                %shifts_temp(ii).diff(:) = 0;
+                Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
+                Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
+                minY = min(Ytc{ii}(:));
+                maxY = max(Ytc{ii}(:));
 
-            if flag_interp    
-                Mf{ii} = cell2mat_ov_sum(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,sizY,Bs);
-            else            
-                Mf{ii} = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,sizY);
-            end                
-        end
-        Mf{ii}(Mf{ii}<minY) = minY;
-        Mf{ii}(Mf{ii}>maxY) = maxY;        
+                if all([length(xx_s),length(yy_s),length(zz_s)] == 1)
+                    M_fin = shift_reconstruct(Yfft{1},shifts_temp(ii).shifts,shifts_temp(ii).diff,options.us_fac,Nr{1},Nc{1},Np{1},options.boundary,0);
+                    Mf{ii} = M_fin;
+                else
+                    shifts_up = shifts_temp(ii).shifts_up;
+                    shifts_cell = mat2cell(shifts_up,ones(length(xx_uf),1),ones(length(yy_uf),1),ones(length(zz_uf),1),nd);
+                    diff_cell = num2cell(shifts_temp(ii).diff);
+                    M_fin = cellfun(shift_fun,Yfft,shifts_cell,diff_cell,Nr,Nc,Np,'un',0);
+
+                    gx = max(abs(reshape(diff(shifts_up,[],1),[],1)));
+                    gy = max(abs(reshape(diff(shifts_up,[],2),[],1)));
+                    gz = max(abs(reshape(diff(shifts_up,[],3),[],1)));
+                    flag_interp = max([gx;gy;gz;0])<0.5;      % detect possible smearing
+
+                    if flag_interp    
+                        Mf{ii} = cell2mat_ov_sum(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,sizY,Bs);
+                    else            
+                        Mf{ii} = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,sizY);
+                    end                
+                end
+                Mf{ii}(Mf{ii}<minY) = minY;
+                Mf{ii}(Mf{ii}>maxY) = maxY;    
+            end
+        otherwise
+            parfor ii = 1:lY 
+                shifts(ii).shifts_up = shifts(ii).shifts;
+                if nd == 3                
+                    tform = affine3d(diag([options.mot_uf(:);1]));
+                    shifts_up = zeros([options.d1,options.d2,options.d3,3]);
+                    for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                    Mf{ii} = imwarp(Ytc{ii},-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method); 
+                else
+                    shifts_up = imresize(shifts_temp(ii).shifts,[options.d1,options.d2]);
+                    Mf{ii} = imwarp(Ytc{ii},-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
+                end
+            end
     end
+    
     Mf = cast(cell2mat(Mf),data_type);
     
     switch lower(options.output_type)
@@ -229,6 +227,4 @@ for t = 1:bin_width:T
             if nd == 3; h5write(options.h5_filename,['/',options.h5_groupname],Mf,[ones(1,nd),t],[sizY(1:nd),rem_mem]); end
     end           
     fprintf('%i out of %i frames registered \n',t+lY-1,T)
-%     if nd == 2; I(:,:,t:min(t+bin_width-1,T)) = Mf; end
-%     if nd == 3; I(:,:,:,t:min(t+bin_width-1,T)) = Mf; end    
 end

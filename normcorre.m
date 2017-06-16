@@ -266,7 +266,7 @@ for it = 1:iter
                         shifts_temp(i,j,k,1) = output(3);
                         shifts_temp(i,j,k,2) = output(4); 
                         diff_temp(i,j,k) = output(2);
-                        if mot_uf == 1
+                        if all([length(xx_s),length(yy_s),length(zz_s)] == 1)
                             M_fin{i,j,k} = remove_boundaries(M_temp,output(3:end),options.boundary,template{i,j,k},add_value);
                         end                                               
                     end
@@ -302,7 +302,7 @@ for it = 1:iter
         
         switch lower(options.shifts_method)
             case 'fft'
-                if any(mot_uf > 1)
+                if any([length(xx_s),length(yy_s),length(zz_s)] > 1)
                     if ~isfield(options,'shifts_method'); options.shifts_method = 'FFT'; end                                         
                     if mot_uf(3) > 1                
                         tform = affine3d(diag([mot_uf(:);1]));
@@ -345,7 +345,7 @@ for it = 1:iter
         
             otherwise
                 shifts(t).shifts_up = shifts(t).shifts;
-                if mot_uf(3) > 1                
+                if nd == 3                
                     tform = affine3d(diag([mot_uf(:);1]));
                     shifts_up = zeros([options.d1,options.d2,options.d3,3]);
                     for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
