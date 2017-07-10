@@ -52,6 +52,10 @@ Names = [
                            %    total length = length(signal)(1 + 2*window_length). (default: 0.5)
     % bitsize for reading .raw files
     'bitsize            ' % (default: 2 (uint16). other choices 1 (uint8), 4 (single), 8 (double))
+    % offset from bidirectional sampling
+    'correct_bidir      ' % check for offset due to bidirectional scanning (default: true)
+    'nFrames            ' % number of frames to average (default: 50)
+    'bidir_us           ' % upsampling factor for bidirectional sampling (default: 10)
    ]; 
    
 [m,n] = size(Names);
@@ -176,6 +180,10 @@ Values = [
     {0.5}
     % bitsize for reading .raw files
     {2}
+    % offset from bidirectional sampling
+    {true}
+    {50}
+    {10}
     ];
 
 for j = 1:m

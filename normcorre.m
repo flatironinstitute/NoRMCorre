@@ -91,6 +91,20 @@ iter = options.iter;
 add_value = options.add_value;
 max_shift = options.max_shift;
 
+%% first check for offset due to bi-directional scanning
+
+if options.correct_bidir
+    col_shift = correct_bidirectional_offset(Y,options.nFrames,options.bidir_us);
+    if col_shift
+        if strcmpi(options.shifts_method,'fft')
+            options.shifts_method = 'cubic';
+            fprintf('Offset %1.1d pixels due to bidirectional scanning detected. Cubic shifts will be applied. \n',col_shift); 
+        end
+    end
+else
+    col_shift = 0;
+end
+
 %% read initial batch and compute template
 perm = randperm(T,init_batch);
 if exist('template','var');
@@ -349,9 +363,11 @@ for it = 1:iter
                     tform = affine3d(diag([mot_uf(:);1]));
                     shifts_up = zeros([options.d1,options.d2,options.d3,3]);
                     for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                    shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
                     Mf = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method); 
                 else
                     shifts_up = imresize(shifts_temp,[options.d1,options.d2]);
+                    shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
                     Mf = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
                 end                    
         end        
