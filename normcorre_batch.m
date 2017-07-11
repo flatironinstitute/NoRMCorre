@@ -299,7 +299,7 @@ for it = 1:iter
                         shifts_temp(i,j,k,1) = output(3);
                         shifts_temp(i,j,k,2) = output(4); 
                         diff_temp(i,j,k) = output(2);
-                        if all([length(xx_s),length(yy_s),length(zz_s)] == 1)
+                        if all([length(xx_s),length(yy_s),length(zz_s)] == 1) && strcmpi(options.shifts_method,'fft');
                             M_fin{i,j,k} = shift_reconstruct(Yt,shifts_temp(i,j,k,:),diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
                         end                                               
                     end
