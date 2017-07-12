@@ -6,7 +6,7 @@
 clear;
 gcp;
 %% read data and convert to double
-name = 'msCam19.avi';
+name = '/Users/epnevmatikakis/Documents/Ca_datasets/Miniscope/msCam19.avi';
 %addpath(genpath('../../NoRMCorre'));
 Yf = read_file(name);
 Yf = single(Yf);
@@ -35,7 +35,7 @@ else
 end
 %% first try out rigid motion correction
     % exclude boundaries due to high pass filtering effects
-options_r = NoRMCorreSetParms('d1',d1-bound,'d2',d2-bound,'bin_width',50,'max_shift',20,'iter',1);
+options_r = NoRMCorreSetParms('d1',d1-bound,'d2',d2-bound,'bin_width',50,'max_shift',20,'iter',1,'correct_bidir',false);
 
 %% register data and apply shifts to removed percentile
 tic; [M1,shifts1,template1] = normcorre_batch(Y(bound/2+1:end-bound/2,bound/2+1:end-bound/2,:),options_r); toc % register filtered data
@@ -50,7 +50,7 @@ tic; Mr = apply_shifts(Yf,shifts1,options_r,bound/2,bound/2); toc % apply shifts
 [cM1f,mM1f,vM1f] = motion_metrics(Mr,options_r.max_shift);
 
 %% plot rigid shifts and metrics
-shifts_r = horzcat(shifts1(:).shifts)';
+shifts_r = squeeze(cat(3,shifts1(:).shifts));
 figure;
     subplot(311); plot(shifts_r);
         title('Rigid shifts','fontsize',14,'fontweight','bold');
@@ -67,7 +67,7 @@ figure;
 % since there is no raster scanning effect in wide field imaging
 
 options_nr = NoRMCorreSetParms('d1',d1-bound,'d2',d2-bound,'bin_width',50, ...
-    'grid_size',[128,128],'mot_uf',4, ...
+    'grid_size',[128,128],'mot_uf',4,'correct_bidir',false, ...
     'overlap_pre',32,'overlap_post',32,'max_shift',20);
 
 tic; [M2,shifts2,template2] = normcorre_batch(Y(bound/2+1:end-bound/2,bound/2+1:end-bound/2,:),options_nr,template1); toc % register filtered data
@@ -80,7 +80,7 @@ tic; Mpr = apply_shifts(Yf,shifts2,options_nr,bound/2,bound/2); toc % apply the 
 
 %% plot shifts        
 
-shifts_r = horzcat(shifts1(:).shifts)';
+shifts_r = squeeze(cat(3,shifts1(:).shifts));
 shifts_nr = cat(ndims(shifts2(1).shifts)+1,shifts2(:).shifts);
 shifts_nr = reshape(shifts_nr,[],ndims(Y)-1,T);
 shifts_x = squeeze(shifts_nr(:,2,:))';

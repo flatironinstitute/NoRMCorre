@@ -49,7 +49,7 @@ figure;
     linkaxes([ax1,ax2,ax3],'xy')
 %% plot shifts        
 
-shifts_r = horzcat(shifts1(:).shifts)';
+shifts_r = squeeze(cat(3,shifts1(:).shifts));
 shifts_nr = cat(ndims(shifts2(1).shifts)+1,shifts2(:).shifts);
 shifts_nr = reshape(shifts_nr,[],ndims(Y)-1,T);
 shifts_x = squeeze(shifts_nr(:,1,:))';
