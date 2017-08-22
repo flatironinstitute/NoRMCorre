@@ -57,7 +57,7 @@ Check the [wiki](https://github.com/simonsfoundation/NoRMCorre/wiki) for more de
 
 If you find this package useful please cite the following paper:
 
-Eftychios A. Pnevmatikakis and Andrea Giovannucci, *NoRMCorre: An online algorithm for piecewise rigid motion correction of calcium imaging data*, bioRxiv 108514; doi: [https://doi.org/10.1101/108514](https://doi.org/10.1101/108514)
+Eftychios A. Pnevmatikakis and Andrea Giovannucci, *NoRMCorre: An online algorithm for piecewise rigid motion correction of calcium imaging data*, Journal of Neuroscience Methods, vol. 291, pp 83-94, 2017; doi: [https://doi.org/10.1016/j.jneumeth.2017.07.031](https://doi.org/10.1016/j.jneumeth.2017.07.031)
 
 ## Acknowledgements
 
