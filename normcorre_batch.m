@@ -1,4 +1,4 @@
-function [M_final,shifts_g,template] = normcorre_batch(Y,options,template)
+function [M_final,shifts_g,template,options,col_shift] = normcorre_batch(Y,options,template)
 
 % online motion correction through DFT subpixel registration
 % Based on the dftregistration.m function from Manuel Guizar and Jim Fienup

@@ -1,4 +1,4 @@
-function [M_final,shifts,template,options] = normcorre(Y,options,template)
+function [M_final,shifts,template,options,col_shift] = normcorre(Y,options,template)
 
 % online motion correction through DFT subpixel registration
 % Based on the dftregistration.m function from Manuel Guizar and Jim Fienup
@@ -11,9 +11,10 @@ function [M_final,shifts,template,options] = normcorre(Y,options,template)
 
 % OUTPUTS
 % M_final:          motion corrected data
-% shifts_up:        upsampled shifts
 % shifts:           originally calculated shifts
 % template:         calculated template
+% options:          options structure (if modified)
+% col_shift:        relative shift due to bi-directional scanning
 
 %% first determine filetype
 
@@ -303,7 +304,8 @@ for it = 1:iter
             end
             for ii = 1:length(xx_s)*length(yy_s)*length(zz_s)
                  [i,j,k] = ind2sub([length(xx_s),length(yy_s),length(zz_s)],ii);
-                 buffer{i,j,k}(:,:,ind) = Mt2{ii};
+                 if nd == 2; buffer{i,j,k}(:,:,ind) = Mt2{ii}; end
+                 if nd == 3; buffer{i,j,k}(:,:,:,ind) = Mt2{ii}; end
                  if mot_uf == 1
                      M_fin{i,j,k} = Mt2{ii};
                  end
@@ -362,9 +364,13 @@ for it = 1:iter
                 if nd == 3                
                     tform = affine3d(diag([mot_uf(:);1]));
                     shifts_up = zeros([options.d1,options.d2,options.d3,3]);
-                    for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                    if numel(shifts_temp) > 3
+                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                    else
+                        for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(:,:,:,dm); end
+                    end
                     shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
-                    Mf = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method); 
+                    Mf = imwarp(Yt,-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method); 
                 else
                     shifts_up = imresize(shifts_temp,[options.d1,options.d2]);
                     shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;

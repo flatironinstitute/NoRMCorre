@@ -1,4 +1,4 @@
-function M_final = apply_shifts(Y,shifts,options,td1,td2,td3)
+function M_final = apply_shifts(Y,shifts,options,td1,td2,td3,col_shift)
 
 % apply shifts using fft/cubic or linear interpolation
 
@@ -136,6 +136,21 @@ switch lower(options.output_type)
 end 
 
 
+if exist('col_shift','var'); options.correct_bidir = false; end
+if options.correct_bidir
+    col_shift = correct_bidirectional_offset(Y,options.nFrames,options.bidir_us);
+else
+    col_shift = 0;
+end
+
+if col_shift
+    if strcmpi(options.shifts_method,'fft')
+        options.shifts_method = 'cubic';
+        fprintf('Offset %1.1f pixels due to bidirectional scanning detected. Cubic shifts will be applied. \n',col_shift); 
+    end
+end
+
+
 bin_width = min([options.mem_batch_size,T,ceil((512^2*3000)/(d1*d2*d3))]);
 for t = 1:bin_width:T
     switch filetype
@@ -166,7 +181,7 @@ for t = 1:bin_width:T
       
     switch lower(options.shifts_method)
         case 'fft'
-            parfor ii = 1:lY 
+            for ii = 1:lY 
                 %shifts_temp(ii).diff(:) = 0;
                 Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
                 Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
@@ -197,15 +212,24 @@ for t = 1:bin_width:T
                 Mf{ii}(Mf{ii}>maxY) = maxY;    
             end
         otherwise
-            parfor ii = 1:lY 
-                shifts(ii).shifts_up = shifts(ii).shifts;
+            for ii = 1:lY 
+                shifts_temp(ii).shifts_up = shifts_temp(ii).shifts;
                 if nd == 3                
                     tform = affine3d(diag([options.mot_uf(:);1]));
                     shifts_up = zeros([options.d1,options.d2,options.d3,3]);
-                    for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
-                    Mf{ii} = imwarp(Ytc{ii},-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method); 
+                    %for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                    if numel(shifts_temp) > 3
+                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                        shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
+                        Mf{ii} = imwarp(Ytc{ii},-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method);
+                    else
+                        for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(ii).shifts(:,:,:,dm); end
+                        Mf{ii} = imtranslate(Ytc{ii},-shifts_up(squeeze([2,1,3])),'cubic');
+                    end                                                           
+                    %Mf = imwarp(Yt,-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method); 
                 else
                     shifts_up = imresize(shifts_temp(ii).shifts,[options.d1,options.d2]);
+                    shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
                     Mf{ii} = imwarp(Ytc{ii},-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
                 end
             end
