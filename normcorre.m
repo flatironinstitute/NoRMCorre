@@ -363,12 +363,12 @@ for it = 1:iter
             otherwise
                 shifts(t).shifts_up = shifts(t).shifts;
                 if nd == 3                
-                    tform = affine3d(diag([mot_uf(:);1]));
                     shifts_up = zeros([options.d1,options.d2,options.d3,3]);
                     if numel(shifts_temp) > 3
+                        tform = affine3d(diag([mot_uf(:);1]));
                         for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
                     else
-                        for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(:,:,:,dm); end
+                        for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(dm); end
                     end
                     shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
                     Mf = imwarp(Yt,-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method); 

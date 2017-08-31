@@ -350,18 +350,23 @@ for it = 1:iter
                     Mf{ii}(Mf{ii}>maxY)=maxY;
             
                 otherwise
+                    
                     shifts(ii).shifts_up = shifts(ii).shifts;
                     if nd == 3                
-                        tform = affine3d(diag([mot_uf(:);1]));
                         shifts_up = zeros([options.d1,options.d2,options.d3,3]);
-                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
-                        shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;                        
-                        Mf{ii} = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method); 
+                        if numel(shifts_temp) > 3
+                            tform = affine3d(diag([mot_uf(:);1]));
+                            for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                        else
+                            for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(dm); end
+                        end
+                        shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
+                        Mf{ii} = imwarp(Yt,-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method); 
                     else
                         shifts_up = imresize(shifts_temp,[options.d1,options.d2]);
                         shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
                         Mf{ii} = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
-                    end        
+                    end   
             end
         end
 

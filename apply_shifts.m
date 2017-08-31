@@ -136,11 +136,9 @@ switch lower(options.output_type)
 end 
 
 
-if exist('col_shift','var'); options.correct_bidir = false; end
+if exist('col_shift','var'); options.correct_bidir = false; else; col_shift = 0; end
 if options.correct_bidir
     col_shift = correct_bidirectional_offset(Y,options.nFrames,options.bidir_us);
-else
-    col_shift = 0;
 end
 
 if col_shift
@@ -214,19 +212,16 @@ for t = 1:bin_width:T
         otherwise
             for ii = 1:lY 
                 shifts_temp(ii).shifts_up = shifts_temp(ii).shifts;
-                if nd == 3                
-                    tform = affine3d(diag([options.mot_uf(:);1]));
+                if nd == 3                                    
                     shifts_up = zeros([options.d1,options.d2,options.d3,3]);
-                    %for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
-                    if numel(shifts_temp) > 3
+                    if numel(shifts_temp(ii).shifts) > 3
+                        tform = affine3d(diag([options.mot_uf(:);1]));
                         for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
-                        shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
-                        Mf{ii} = imwarp(Ytc{ii},-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method);
                     else
                         for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(ii).shifts(:,:,:,dm); end
-                        Mf{ii} = imtranslate(Ytc{ii},-shifts_up(squeeze([2,1,3])),'cubic');
-                    end                                                           
-                    %Mf = imwarp(Yt,-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method); 
+                    end
+                    shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
+                    Mf{ii} = imwarp(Ytc{ii},-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method);
                 else
                     shifts_up = imresize(shifts_temp(ii).shifts,[options.d1,options.d2]);
                     shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
