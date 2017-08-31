@@ -229,7 +229,7 @@ cnt_buf = 0;
 fprintf('Template initialization complete. \n')
 %%
 
-
+prevstr = [];
 for it = 1:iter
     for t = 1:bin_width:T
         switch filetype
@@ -397,8 +397,10 @@ for it = 1:iter
         end        
         end
         
+        str=[num2str(t+lY-1), ' out of ', num2str(T), ' frames registered, iteration ', num2str(it), ' out of ', num2str(iter), '..'];
+        refreshdisp(str, prevstr, t);
+        prevstr=str; 
         % update template
-        fprintf('%i out of %i frames registered, iteration %i out of %i \n',t+lY-1,T,it,iter)
         if upd_template
             cnt_buf = cnt_buf + 1;
             if nd == 2; buffer = mat2cell_ov(Mf,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,sizY); end

@@ -229,6 +229,7 @@ end
 cnt_buf = 0;
 fprintf('Template initialization complete. \n')
 %%
+prevstr = [];
 for it = 1:iter
     if it < iter; plot_flag = 0; else plot_flag = options.plot_flag; end
     for t = 1:T
@@ -402,7 +403,10 @@ for it = 1:iter
         end         
         
         if mod(t,bin_width) == 0 && upd_template
-            fprintf('%i out of %i frames registered, iteration %i out of %i \n',t,T,it,iter)
+            str=[num2str(t), ' out of ', num2str(T), ' frames registered, iteration ', num2str(it), ' out of ', num2str(iter), '..'];
+            refreshdisp(str, prevstr, t);
+            prevstr=str; 
+            %fprintf('%i out of %i frames registered, iteration %i out of %i \n',t,T,it,iter)
             cnt_buf = cnt_buf + 1;                
             if strcmpi(method{2},'mean')
                 new_temp = cellfun(@(x) nanmean(x,nd+1), buffer, 'UniformOutput',false);
@@ -455,4 +459,5 @@ if make_avi && plot_flag
     close(vidObj);
 end
 maxNumCompThreads('automatic');
+fprintf('done. \n');
 end

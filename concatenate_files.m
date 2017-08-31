@@ -32,10 +32,10 @@ switch lower(output_type)
     case 'mat'
         Ycon = cast([],data_type); %zeros([sizY,T1],data_type);       
     case {'hdf5','h5'}
-        Ycon = ['motion corrected file has been saved as ', filename];
+        Ycon = filename;
         h5create(filename,'/mov',[sizY,Inf],'Chunksize',[sizY,1],'Datatype',data_type);
     case {'tif','tiff'}
-        Ycon = ['motion corrected file has been saved as ', filename];
+        Ycon = filename;
         opts_tiff.append = true;
         opts_tiff.big = true;
     otherwise
