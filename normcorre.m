@@ -35,7 +35,11 @@ if isa(Y,'char')
     elseif strcmpi(ext,'mat')
         filetype = 'mem';
         Y = matfile(Y,'Writable',true);
-        sizY = size(Y);
+        details = whos(Y);
+        var_sizes = [details.bytes];
+        [~,var_ind] = max(var_sizes);
+        var_name = details(var_ind).name;
+        sizY = size(Y,var_name);
     elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5');
         filetype = 'hdf5';
         fileinfo = hdf5info(Y);
@@ -43,7 +47,8 @@ if isa(Y,'char')
     end    
 elseif isobject(Y);
     filetype = 'mem';
-    sizY = size(Y,'Y');
+    var_name = 'Y';
+    sizY = size(Y,var_name);
 else % array loaded in memory
     filetype = 'mat';
     Y = single(Y);
@@ -122,7 +127,7 @@ switch filetype
     case 'hdf5'
         Y_temp = bigread2(Y,1,init_batch);        
     case 'mem'
-        if nd == 2; Y_temp = Y.Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.Y(:,:,:,1:init_batch); end
+        if nd == 2; Y_temp = Y.(var_name)(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.(var_name)(:,:,:,1:init_batch); end
     case 'mat'
         if nd == 2; Y_temp = Y(:,:,perm); elseif nd == 3; Y_temp = Y(:,:,:,perm); end
 end
@@ -239,8 +244,8 @@ for it = 1:iter
             case 'hdf5'
                 Yt = single(h5read(Y,'/mov',[ones(1,nd),t],[sizY(1:nd),1]));
             case 'mem'
-                if nd == 2; Yt = single(Y.Y(:,:,t)); end
-                if nd == 3; Yt = single(Y.Y(:,:,:,t)); end
+                if nd == 2; Yt = single(Y.(var_name)(:,:,t)); end
+                if nd == 3; Yt = single(Y.(var_name)(:,:,:,t)); end
             case 'mat'
                 if nd == 2; Yt = single(Y(:,:,t)); end
                 if nd == 3; Yt = single(Y(:,:,:,t)); end

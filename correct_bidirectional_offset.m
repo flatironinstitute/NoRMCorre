@@ -9,12 +9,16 @@ if ~exist('nFrames','var'); nFrames = 50; end
 if isa(Y,'char')
     Y = read_file(Y,1,nFrames);
 elseif isobject(Y);
-    sizY = size(Y,'Y');
+    details = whos(Y);
+    var_sizes = [details.bytes];
+    [~,var_ind] = max(var_sizes);
+    var_name = details(var_ind).name;
+    sizY = size(Y,var_name);
     T = sizY(end);
     if length(sizY) == 3; 
-        Y = Y.Y(:,:,1:min(T,nFrames));
+        Y = Y.(var_name)(:,:,1:min(T,nFrames));
     else
-        Y = Y.Y(:,:,:,1:min(T,nFrames));
+        Y = Y.(var_name)(:,:,:,1:min(T,nFrames));
     end
 else
     sizY = size(Y); 
