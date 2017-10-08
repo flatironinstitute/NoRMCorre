@@ -207,6 +207,13 @@ switch lower(options.output_type)
         elseif nd == 3
             h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype',data_type);
         end
+    case {'tif','tiff'}
+        M_final = options.tiff_filename;
+        opts_tiff.append = true;
+        opts_tiff.big = true;
+        if nd == 3
+            error('Saving volumetric tiff stacks is currently not supported. Use a different filetype');
+        end        
     otherwise
         error('This filetype is currently not supported')
 end   
@@ -401,10 +408,15 @@ for it = 1:iter
                     M_final.Yr(:,t-rem_mem+1:t) = reshape(mem_buffer(1:d1*d2*d3*rem_mem),d1*d2*d3,rem_mem);
                 end      
             case {'hdf5','h5'}
-                if rem_mem == options.mem_batch_size || t== T
+                if rem_mem == options.mem_batch_size || t == T
                     if nd == 2; h5write(options.h5_filename,['/',options.h5_groupname],mem_buffer(:,:,1:rem_mem),[ones(1,nd),t-rem_mem+1],[sizY(1:nd),rem_mem]); end
                     if nd == 3; h5write(options.h5_filename,['/',options.h5_groupname],mem_buffer(:,:,:,1:rem_mem),[ones(1,nd),t-rem_mem+1],[sizY(1:nd),rem_mem]); end
                 end
+            case {'tif','tiff'}
+                if rem_mem == options.mem_batch_size || t == T
+                    1
+                    saveastiff(cast(mem_buffer(:,:,1:rem_mem),data_type),options.tiff_filename,opts_tiff);
+                end                
         end         
         
         if mod(t,bin_width) == 0 && upd_template

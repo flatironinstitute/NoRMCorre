@@ -131,6 +131,13 @@ switch lower(options.output_type)
         elseif nd == 3
             h5create(options.h5_filename,['/',options.h5_groupname],[d1,d2,d3,Inf],'Chunksize',[d1,d2,d3,options.mem_batch_size],'Datatype',data_type);
         end
+    case {'tif','tiff'}
+        M_final = options.tiff_filename;
+        opts_tiff.append = true;
+        opts_tiff.big = true;
+        if nd == 3
+            error('Saving volumetric tiff stacks is currently not supported. Use a different filetype');
+        end        
     otherwise
         error('This filetype is currently not supported')
 end 
@@ -244,6 +251,8 @@ for t = 1:bin_width:T
             rem_mem = min(bin_width,T-t+1);
             if nd == 2; h5write(options.h5_filename,['/',options.h5_groupname],Mf,[ones(1,nd),t],[sizY(1:nd),rem_mem]); end
             if nd == 3; h5write(options.h5_filename,['/',options.h5_groupname],Mf,[ones(1,nd),t],[sizY(1:nd),rem_mem]); end
+        case {'tif','tiff'}
+            saveastiff(cast(Mf,data_type),options.tiff_filename,opts_tiff);
     end           
     fprintf('%i out of %i frames registered \n',t+lY-1,T)
 end
