@@ -136,7 +136,21 @@ data_type = class(Y_temp);
 Y_temp = single(Y_temp);
 
 if nargin < 3 || isempty(template)
+    fprintf('Registering the first %i frames just to obtain a good template....',init_batch);
     template_in = median(Y_temp,nd+1)+add_value;
+    fftTemp = fftn(template_in);
+    for t = 1:size(Y_temp,nd+1);        
+        if nd == 2; 
+            [~,Greg] = dftregistration_min_max(fftTemp,fftn(Y_temp(:,:,t)),us_fac,-max_shift,max_shift,options.phase_flag);
+        end
+        if nd == 3; 
+            [~,Greg] = dftregistration_min_max_3d(fftTemp,fftn(Y_temp(:,:,:,t)),us_fac,-max_shift,max_shift,options.phase_flag); 
+        end
+        M_temp = real(ifftn(Greg));
+        template_in = template_in*(t-1)/t + M_temp/t;
+    end
+    template_in = template_in + add_value;
+    fprintf('..done. \n')
 else
     template_in = single(template + add_value);
 end
@@ -239,7 +253,7 @@ if plot_flag
         set(gcf, 'Position', round([100 100 fac*d2 fac*d1]));
 end
 cnt_buf = 0;
-fprintf('Template initialization complete. \n')
+fprintf('Template initialization complete.  Now registering all the frames with new template. \n')
 %%
 prevstr = [];
 for it = 1:iter
