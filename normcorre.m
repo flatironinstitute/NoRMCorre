@@ -382,9 +382,7 @@ for it = 1:iter
                     Mf = cell2mat_ov_sum(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY,Bs) - add_value;
                 else            
                     Mf = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY) - add_value;
-                end
-                Mf(Mf<minY) = minY;
-                Mf(Mf>maxY) = maxY;               
+                end                             
         
             otherwise
                 shifts(t).shifts_up = shifts(t).shifts;
@@ -402,7 +400,10 @@ for it = 1:iter
                     shifts_up = imresize(shifts_temp,[options.d1,options.d2]);
                     shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
                     Mf = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
-                end                    
+                end    
+             
+             Mf(Mf<minY) = minY;
+             Mf(Mf>maxY) = maxY;  
         end        
             
         if ~strcmpi(options.output_type,'mat')

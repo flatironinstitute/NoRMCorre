@@ -364,9 +364,7 @@ for it = 1:iter
                         Mf{ii} = cell2mat_ov_sum(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY,Bs) - add_value;
                     else            
                         Mf{ii} = cell2mat_ov(M_fin,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,overlap_post,sizY) - add_value;
-                    end
-                    Mf{ii}(Mf{ii}<minY)=minY;
-                    Mf{ii}(Mf{ii}>maxY)=maxY;
+                    end                    
             
                 otherwise
                     
@@ -387,6 +385,8 @@ for it = 1:iter
                         Mf{ii} = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
                     end   
             end
+            Mf{ii}(Mf{ii}<minY)=minY;
+            Mf{ii}(Mf{ii}>maxY)=maxY;
         end
 
         shifts_g(t:min(t+bin_width-1,T)) = shifts;

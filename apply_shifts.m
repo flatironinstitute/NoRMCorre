@@ -217,7 +217,9 @@ for t = 1:bin_width:T
                 Mf{ii}(Mf{ii}>maxY) = maxY;    
             end
         otherwise
-            for ii = 1:lY 
+            for ii = 1:lY
+                minY = min(Ytc{ii}(:));
+                maxY = max(Ytc{ii}(:));
                 shifts_temp(ii).shifts_up = shifts_temp(ii).shifts;
                 if nd == 3                                    
                     shifts_up = zeros([options.d1,options.d2,options.d3,3]);
@@ -234,6 +236,8 @@ for t = 1:bin_width:T
                     shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
                     Mf{ii} = imwarp(Ytc{ii},-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
                 end
+                Mf{ii}(Mf{ii}<minY) = minY;
+                Mf{ii}(Mf{ii}>maxY) = maxY;
             end
     end
     
