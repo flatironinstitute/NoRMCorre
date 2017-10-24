@@ -57,6 +57,7 @@ if nargout > 1
     Nc = ifftshift(-fix(size(mY1,2)/2):ceil(size(mY1,2)/2)-1);
 
     min_value = min(Y(:));
+    max_value = max(Y(:));
     Y = Y - min_value;  % make data non-negative
 
     Y1 = Y(1:2:end,:,:);
@@ -70,5 +71,7 @@ if nargout > 1
         M(sizY(1)+1:end,:) = [];
     end
     M = reshape(M,sizY) + min_value;
+    M(M<min_value) = min_value;
+    M(M>max_value) = max_value;
 
 end
