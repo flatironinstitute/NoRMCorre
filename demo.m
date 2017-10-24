@@ -18,13 +18,13 @@ T = size(Y,ndims(Y));
 %Y = Y - min(Y(:));
 %% set parameters (first try out rigid motion correction)
 
-options_rigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'bin_width',50,'max_shift',15,'us_fac',50);
+options_rigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'bin_width',50,'max_shift',15,'us_fac',50,'init_batch',200);
 
 %% perform motion correction
 tic; [M1,shifts1,template1] = normcorre(Y,options_rigid); toc
 
 %% now try non-rigid motion correction (also in parallel)
-options_nonrigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'grid_size',[32,32],'mot_uf',4,'bin_width',50,'max_shift',15,'max_dev',3,'us_fac',50);
+options_nonrigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'grid_size',[32,32],'mot_uf',4,'bin_width',50,'max_shift',15,'max_dev',3,'us_fac',50,'init_batch',200);
 tic; [M2,shifts2,template2] = normcorre_batch(Y,options_nonrigid); toc
 
 %% compute metrics

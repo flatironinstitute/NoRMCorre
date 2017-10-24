@@ -62,6 +62,11 @@ else % array loaded in memory
     Y = single(Y);
     sizY = size(Y);
 end
+if strcmpi(options.boundary,'nan')
+    fill_value = NaN;
+else
+    fill_value = options.add_value;
+end
 
 T = length(shifts);
 
@@ -143,7 +148,7 @@ switch lower(options.output_type)
 end 
 
 
-if exist('col_shift','var'); options.correct_bidir = false; else; col_shift = 0; end
+if exist('col_shift','var'); options.correct_bidir = false; else col_shift = 0; end
 if options.correct_bidir
     col_shift = correct_bidirectional_offset(Y,options.nFrames,options.bidir_us);
 end
@@ -230,11 +235,11 @@ for t = 1:bin_width:T
                         for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(ii).shifts(:,:,:,dm); end
                     end
                     shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
-                    Mf{ii} = imwarp(Ytc{ii},-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method);
+                    Mf{ii} = imwarp(Ytc{ii},-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method,'FillValues',fill_value);
                 else
                     shifts_up = imresize(shifts_temp(ii).shifts,[options.d1,options.d2]);
                     shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
-                    Mf{ii} = imwarp(Ytc{ii},-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
+                    Mf{ii} = imwarp(Ytc{ii},-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method,'FillValues',fill_value);  
                 end
                 Mf{ii}(Mf{ii}<minY) = minY;
                 Mf{ii}(Mf{ii}>maxY) = maxY;

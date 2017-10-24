@@ -96,6 +96,12 @@ fr = options.fr;
 iter = options.iter;
 add_value = options.add_value;
 max_shift = options.max_shift;
+if strcmpi(options.boundary,'nan')
+    fill_value = NaN;
+else
+    fill_value = add_value;
+end
+    
 
 %% first check for offset due to bi-directional scanning
 
@@ -109,7 +115,7 @@ if options.correct_bidir
     end
 else
     col_shift = 0;
-end
+end 
 
 %% read initial batch and compute template
 perm = randperm(T,init_batch);
@@ -395,11 +401,11 @@ for it = 1:iter
                         for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(dm); end
                     end
                     shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
-                    Mf = imwarp(Yt,-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method); 
+                    Mf = imwarp(Yt,-cat(4,shifts_up(:,:,:,2),shifts_up(:,:,:,1),shifts_up(:,:,:,3)),options.shifts_method,'FillValues',fill_value); 
                 else
                     shifts_up = imresize(shifts_temp,[options.d1,options.d2]);
                     shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
-                    Mf = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);  
+                    Mf = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method,'FillValues',fill_value);  
                 end    
              
              Mf(Mf<minY) = minY;
