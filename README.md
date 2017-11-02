@@ -30,7 +30,7 @@ The ```options``` struct can be set either manually or by using the function ```
 | ```iter``` | number of times to go over the dataset |
 | ```output_type``` | type of output registered file |
 | ```phase_flag``` | flag for using phase correlation |
-
+| ```correct_bidir``` | check for offset due to bidirectional scanning (default: true) |
 
 The performance of registration can be evaluated using the function ```motion_metrics.m```. The function simply computes the correlation coefficient of each (registered) frame, with the mean (registered) frame across time, the mean registered frame, and its crispness.
 
