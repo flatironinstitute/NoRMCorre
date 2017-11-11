@@ -42,8 +42,10 @@ elseif strcmpi(ext,'.avi')
     Y1 = readFrame(v);
     imData = zeros(v.Height,v.Width,num2read,'like',Y1);
     i = 1;
-    imData(:,:,i-sframe+1) = Y1;
-    while hasFrame(v)
+    if sframe == 1
+        imData(:,:,i-sframe+1) = Y1;
+    end
+    while hasFrame(v)  && i - sframe + 1 < num2read
         video = readFrame(v);
         i = i + 1;
         if i >= sframe
