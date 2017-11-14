@@ -56,6 +56,7 @@ Names = [
     'correct_bidir      ' % check for offset due to bidirectional scanning (default: true)
     'nFrames            ' % number of frames to average (default: 50)
     'bidir_us           ' % upsampling factor for bidirectional sampling (default: 10)
+    'col_shift          ' % known bi-directional offset provided by the user (default: [])
    ]; 
    
 [m,n] = size(Names);
@@ -184,6 +185,7 @@ Values = [
     {true}
     {50}
     {10}
+    {}
     ];
 
 for j = 1:m

@@ -148,7 +148,13 @@ switch lower(options.output_type)
 end 
 
 
-if exist('col_shift','var'); options.correct_bidir = false; else col_shift = 0; end
+if exist('col_shift','var'); options.col_shift = col_shift; end
+if ~isempty(options.col_shift) 
+    col_shift = options.col_shift; 
+    options.correct_bidir = false; 
+elseif ~options.correct_bidir
+    col_shift = 0;
+end
 if options.correct_bidir
     col_shift = correct_bidirectional_offset(Y,options.nFrames,options.bidir_us);
 end
@@ -159,7 +165,6 @@ if col_shift
         fprintf('Offset %1.1f pixels due to bidirectional scanning detected. Cubic shifts will be applied. \n',col_shift); 
     end
 end
-
 
 bin_width = min([options.mem_batch_size,T,ceil((512^2*3000)/(d1*d2*d3))]);
 for t = 1:bin_width:T
