@@ -109,7 +109,7 @@ end
 
 if options.correct_bidir && isempty(options.col_shift)
     col_shift = correct_bidirectional_offset(Y,options.nFrames,options.bidir_us);
-elseif ~isempty(options.colshift)
+elseif ~isempty(options.col_shift)
     col_shift = options.col_shift;
 else
     col_shift = 0;
