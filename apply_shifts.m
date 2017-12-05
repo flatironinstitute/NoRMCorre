@@ -195,8 +195,8 @@ for t = 1:bin_width:T
     
       
     switch lower(options.shifts_method)
-        case 'fft'
-            for ii = 1:lY 
+        case 'fft'            
+            parfor ii = 1:lY 
                 %shifts_temp(ii).diff(:) = 0;
                 Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
                 Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
@@ -227,7 +227,7 @@ for t = 1:bin_width:T
                 Mf{ii}(Mf{ii}>maxY) = maxY;    
             end
         otherwise
-            for ii = 1:lY
+            parfor ii = 1:lY
                 minY = min(Ytc{ii}(:));
                 maxY = max(Ytc{ii}(:));
                 shifts_temp(ii).shifts_up = shifts_temp(ii).shifts;
