@@ -50,8 +50,14 @@ if isa(Y,'char')
         sizY = [FOV,T];
         fclose(fid);
         data_type = 'single';
+    elseif strcmpi(ext,'avi')
+        filetype = 'avi';
+        v = VideoReader(Y);
+        T = v.Duration*v.FrameRate;
+        sizY = [v.Height,v.Width,T];
+        data_type = class(readFrame(v));
     end    
-elseif isobject(Y);
+elseif isobject(Y)
     filetype = 'mem';
     sizY = size(Y,'Y');
     details = whos(Y,'Y');
@@ -184,6 +190,8 @@ for t = 1:bin_width:T
             if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
         case 'raw'
             Ytm = read_raw_file(Y,t,min(t+bin_width-1,T)-t+1,FOV,bitsize);
+        case 'avi'
+            Ytm = read_file(Y,t,min(t+bin_width-1,T)-t+1);
     end
 %    if ~flag_constant
     if nd == 2; Ytc = mat2cell(Ytm,d1,d2,ones(1,size(Ytm,3))); end
