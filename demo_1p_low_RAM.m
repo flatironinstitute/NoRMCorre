@@ -35,6 +35,7 @@ while (1)  % read filter and save file in chunks
         saveash5(Y,h5_name);
         cnt = cnt + size(Y,ndims(Y));
     end
+    disp(cnt)
 end
 %% first try out rigid motion correction
     % exclude boundaries due to high pass filtering effects

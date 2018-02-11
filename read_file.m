@@ -19,7 +19,7 @@ if nargin<3 || isempty(num2read); num2read = Inf; end
 
 [~,~,ext] = fileparts(path_to_file);
 
-if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');    
+if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.btf');    
     imData = loadtiff(path_to_file,sframe,num2read);    
 elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
 %     info = hdf5info(path_to_file);
@@ -42,6 +42,7 @@ elseif strcmpi(ext,'.avi')
         if nargin < 3
             num2read = v.Duration*v.FrameRate-sframe+1;
         end
+        num2read = min(num2read,v.Duration*v.FrameRate-sframe+1);
         Y1 = readFrame(v);
         imData = zeros(v.Height,v.Width,num2read,'like',Y1);
         i = 1;
