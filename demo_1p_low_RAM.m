@@ -22,13 +22,12 @@ ind_nonzero = (psf(:)>=max(psf(:,1)));
 psf = psf-mean(psf(ind_nonzero));
 psf(~ind_nonzero) = 0;   % only use pixels within the center disk
 
-chunk_size = 500;
 [filepath,file_name,ext] = fileparts(name);
-h5_name = fullfile(filepath,[file_name,'_filtered.h5']);
-chunksize = 500;    % read 500 frames at a time
+h5_name = fullfile(filepath,[file_name,'_filtered_data.h5']);
+chunksize = 750;    % read 500 frames at a time
 cnt = 1;
 while (1)  % read filter and save file in chunks
-    Yf = single(read_file(name,cnt,500));
+    Yf = single(read_file(name,cnt,chunksize));
     if isempty(Yf)
         break
     else
@@ -50,7 +49,6 @@ tic; [M1,shifts1,template1] = normcorre_batch(h5_name,options_r); toc % register
 % or options_r.h5_filename accordingly.
 
 tic; Mr = apply_shifts(name,shifts1,options_r); toc % apply shifts to full dataset
-    % apply shifts on the whole movie
     
 % you can only save the motion corrected file directly in memory by
 % setting options_r.output_type = 'tiff' or 'h5' and selecting an
