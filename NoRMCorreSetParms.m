@@ -200,6 +200,8 @@ if isempty(options.d2); options.d2 = input('What is the total number of columns?
 if isempty(options.grid_size); options.grid_size = [options.d1,options.d2,options.d3]; end
 if length(options.grid_size) == 1; options.grid_size = options.grid_size*ones(1,3); end
 if length(options.grid_size) == 2; options.grid_size(3) = 1; end
+if length(options.min_patch_size) == 1; options.min_patch_size = options.min_patch_size*ones(1,3); end
+if length(options.min_patch_size) == 2; options.min_patch_size(3) = 1; end
 if length(options.overlap_pre) == 1; options.overlap_pre = options.overlap_pre*ones(1,3); end
 if length(options.overlap_pre) == 2; options.overlap_pre(3) = 1; end
 if length(options.overlap_post) == 1; options.overlap_post = options.overlap_post*ones(1,3); end

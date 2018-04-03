@@ -357,10 +357,12 @@ for it = 1:iter
                 if any([length(xx_s),length(yy_s),length(zz_s)] > 1)
                     if ~isfield(options,'shifts_method'); options.shifts_method = 'FFT'; end                                         
                     if mot_uf(3) > 1                
-                        tform = affine3d(diag([mot_uf(:);1]));
-                        diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]));
+                        %tform = affine3d(diag([mot_uf(:);1]));
+                        tform = affine3d(diag([mot_uf([2,1,3])';1]));
+                        %diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]));
+                        diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]),'SmoothEdges',true);
                         shifts_up = zeros([size(diff_up),3]);
-                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)])); end
+                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]),'SmoothEdges',true); end
                     else
                         shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
                         diff_up = imresize(diff_temp,[length(xx_uf),length(yy_uf)]);
@@ -397,9 +399,10 @@ for it = 1:iter
                 shifts(t).shifts_up = shifts(t).shifts;
                 if nd == 3                
                     shifts_up = zeros([options.d1,options.d2,options.d3,3]);
+                    do = size(shifts_up)./size(shifts_temp);
                     if numel(shifts_temp) > 3
-                        tform = affine3d(diag([mot_uf(:);1]));
-                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                        tform = affine3d(diag([do([2,1,3])';1]));
+                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3]),'SmoothEdges',true); end
                     else
                         for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(dm); end
                     end
@@ -438,7 +441,6 @@ for it = 1:iter
                 end
             case {'tif','tiff'}
                 if rem_mem == options.mem_batch_size || t == T
-                    1
                     saveastiff(cast(mem_buffer(:,:,1:rem_mem),data_type),options.tiff_filename,opts_tiff);
                 end                
         end         

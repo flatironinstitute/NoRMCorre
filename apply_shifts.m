@@ -118,6 +118,9 @@ if strcmpi(options.shifts_method,'fft');
     end
     if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
     shift_fun = @(yfft,shfts,ph,nr,nc,np) shift_reconstruct(yfft,shfts,ph,options.us_fac,nr,nc,np,options.boundary,0);
+else
+    do = [d1,d2,d3,1]./size(shifts(1).shifts);
+    tform = affine3d(diag([do([2,1,3])';1]));
 end
 
 switch lower(options.output_type)
@@ -201,11 +204,9 @@ for t = 1:bin_width:T
     lY = length(Ytc);
     shifts_temp = shifts(t:t+lY-1);
     
-      
     switch lower(options.shifts_method)
         case 'fft'            
             parfor ii = 1:lY 
-                %shifts_temp(ii).diff(:) = 0;
                 Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
                 Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
                 minY = min(Ytc{ii}(:));
@@ -240,10 +241,11 @@ for t = 1:bin_width:T
                 maxY = max(Ytc{ii}(:));
                 shifts_temp(ii).shifts_up = shifts_temp(ii).shifts;
                 if nd == 3                                    
-                    shifts_up = zeros([options.d1,options.d2,options.d3,3]);
+                    shifts_up = zeros([d1,d2,d3,3]);
                     if numel(shifts_temp(ii).shifts) > 3
-                        tform = affine3d(diag([options.mot_uf(:);1]));
-                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                        %tform = affine3d(diag([options.mot_uf(:);1]));
+                        %tform = affine3d(diag([do([2,1,3])';1]));
+                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([d1,d2,d3]),'SmoothEdges',true); end
                     else
                         for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(ii).shifts(:,:,:,dm); end
                     end
