@@ -299,7 +299,6 @@ Nout = outsize;
 Nin = size(imFT);
 imFT = fftshift(imFT);
 center = floor(size(imFT)/2)+1;
-
 imFTout = zeros(outsize);
 centerout = floor(size(imFTout)/2)+1;
 
@@ -310,5 +309,7 @@ cenout_cen = centerout - center;
 imFTout(max(cenout_cen(1)+1,1):min(cenout_cen(1)+Nin(1),Nout(1)),max(cenout_cen(2)+1,1):min(cenout_cen(2)+Nin(2),Nout(2)),max(cenout_cen(3)+1,1):min(cenout_cen(3)+Nin(3),Nout(3))) ...
     = imFT(max(-cenout_cen(1)+1,1):min(-cenout_cen(1)+Nout(1),Nin(1)),max(-cenout_cen(2)+1,1):min(-cenout_cen(2)+Nout(2),Nin(2)),max(-cenout_cen(3)+1,1):min(-cenout_cen(3)+Nout(3),Nin(3)));
 
+%imFTout2 = padarray(imFT,cenout_cen,0,'pre');
+%imFTout = padarray(imFTout2,cenout_cen-mod(size(imFT),2),0,'post');
 imFTout = ifftshift(imFTout)*Nout(1)*Nout(2)*Nout(3)/(Nin(1)*Nin(2)*Nin(3));
 return

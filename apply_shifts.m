@@ -119,8 +119,15 @@ if strcmpi(options.shifts_method,'fft');
     if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
     shift_fun = @(yfft,shfts,ph,nr,nc,np) shift_reconstruct(yfft,shfts,ph,options.us_fac,nr,nc,np,options.boundary,0);
 else
-    do = [d1,d2,d3,1]./size(shifts(1).shifts);
-    tform = affine3d(diag([do([2,1,3])';1]));
+    if nd == 3
+        dim = [d1,d2,d3];
+        ds = size(shifts(1).shifts);
+        do = [d1,d2,d3,1]./size(shifts(1).shifts);
+        %tform = affine3d(diag([do([2,1,3])';1]));
+        [Xq,Yq,Zq] = meshgrid(linspace((1+1/do(2))/2,ds(2)+(1-1/do(2))/2,dim(2)),linspace((1+1/do(1))/2,ds(1)+(1-1/do(1))/2,dim(1)),linspace((1+1/do(3))/2,ds(3)+(1-1/do(3))/2,dim(3)));
+    else
+        Xq = []; Yq = []; Zq = [];
+    end
 end
 
 switch lower(options.output_type)
@@ -245,7 +252,8 @@ for t = 1:bin_width:T
                     if numel(shifts_temp(ii).shifts) > 3
                         %tform = affine3d(diag([options.mot_uf(:);1]));
                         %tform = affine3d(diag([do([2,1,3])';1]));
-                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([d1,d2,d3]),'SmoothEdges',true); end
+                        %for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([d1,d2,d3]),'SmoothEdges',true); end
+                        for dm = 1:3; shifts_up(:,:,:,dm) = interp3(shifts_temp(ii).shifts(:,:,:,dm),Xq,Yq,Zq,'makima'); end
                     else
                         for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(ii).shifts(:,:,:,dm); end
                     end

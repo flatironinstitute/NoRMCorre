@@ -292,7 +292,7 @@ for it = 1:iter
         diff_temp = zeros(length(xx_s),length(yy_s),length(zz_s));
         if numel(M_fin) > 1           
             if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift,options.phase_flag); lb = out_rig(3:4); ub = out_rig(3:4); end
-            if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),us_fac,-max_shift,max_shift,options.phase_flag); lb = out_rig(3:5); ub = out_rig(3:5); end
+            if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),1,-max_shift,max_shift,options.phase_flag); lb = out_rig(3:5); ub = out_rig(3:5); end
         else
             lb = -max_shift(1,nd);
             ub = max_shift(1,nd);
@@ -327,17 +327,29 @@ for it = 1:iter
             Mt2 = cell(length(xx_s)*length(yy_s)*length(zz_s),1);            
             shifts_cell = cell(length(xx_s)*length(yy_s)*length(zz_s),1); 
             diff_cell = cell(length(xx_s)*length(yy_s)*length(zz_s),1); 
-            parfor ii = 1:length(xx_s)*length(yy_s)*length(zz_s)
-                [i,j,k] = ind2sub([length(xx_s),length(yy_s),length(zz_s)],ii)
-                %if nd == 2; [output,Greg] = dftregistration_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift); end
-                %if nd == 3; [output,Greg] = dftregistration_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift); end
-                if nd == 2; [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2),options.phase_flag); end
-                if nd == 3; [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev,options.phase_flag); end                
+            for ii = length(xx_s)*length(yy_s)*length(zz_s):-1:1
+                [i,j,k] = ind2sub([length(xx_s),length(yy_s),length(zz_s)],ii);
+                if nd == 2; future_results(ii) = parfeval(@dftregistration_min_max,2,fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2),options.phase_flag); end
+                if nd == 3; future_results(ii) = parfeval(@dftregistration_min_max_3d,2,fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev,options.phase_flag); end
+            end
+            for i = 1:length(xx_s)*length(yy_s)*length(zz_s)
+                [ii,output,Greg] = fetchNext(future_results);
                 M_temp = real(ifftn(Greg));
                 Mt2{ii} = M_temp;
                 shifts_cell{ii} = output(3:end);
                 diff_cell{ii} = output(2);
             end
+%             parfor ii = 1:length(xx_s)*length(yy_s)*length(zz_s)
+%                 [i,j,k] = ind2sub([length(xx_s),length(yy_s),length(zz_s)],ii);
+%                 %if nd == 2; [output,Greg] = dftregistration_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift); end
+%                 %if nd == 3; [output,Greg] = dftregistration_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,max_shift); end
+%                 if nd == 2; [output,Greg] = dftregistration_min_max(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev(1:2),ub+max_dev(1:2),options.phase_flag); end
+%                 if nd == 3; [output,Greg] = dftregistration_min_max_3d(fftTemp{i,j,k},fftY{i,j,k},us_fac,lb-max_dev,ub+max_dev,options.phase_flag); end                
+%                 M_temp = real(ifftn(Greg));
+%                 Mt2{ii} = M_temp;
+%                 shifts_cell{ii} = output(3:end);
+%                 diff_cell{ii} = output(2);
+%             end
             for ii = 1:length(xx_s)*length(yy_s)*length(zz_s)
                  [i,j,k] = ind2sub([length(xx_s),length(yy_s),length(zz_s)],ii);
                  if nd == 2; buffer{i,j,k}(:,:,ind) = Mt2{ii}; end
@@ -357,12 +369,18 @@ for it = 1:iter
                 if any([length(xx_s),length(yy_s),length(zz_s)] > 1)
                     if ~isfield(options,'shifts_method'); options.shifts_method = 'FFT'; end                                         
                     if mot_uf(3) > 1                
+                        do = [length(xx_us),length(yy_us),length(zz_us)]./[length(xx_s),length(yy_s),length(zz_s)];
+                        ds = [length(xx_s),length(yy_s),length(zz_s)];
+                        dim = [length(xx_us),length(yy_us),length(zz_us)];
+                        [Xq,Yq,Zq] = meshgrid(linspace((1+1/do(2))/2,ds(2)+(1-1/do(2))/2,dim(2)),linspace((1+1/do(1))/2,ds(1)+(1-1/do(1))/2,dim(1)),linspace((1+1/do(3))/2,ds(3)+(1-1/do(3))/2,dim(3)));
                         %tform = affine3d(diag([mot_uf(:);1]));
-                        tform = affine3d(diag([mot_uf([2,1,3])';1]));
+                        %tform = affine3d(diag([mot_uf([2,1,3])';1]));
                         %diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]));
-                        diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]),'SmoothEdges',true);
+                        %diff_up = imwarp(diff_temp,tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]),'SmoothEdges',true);
+                        diff_up = interp3(diff_temp,Xq,Yq,Zq,'makima');
                         shifts_up = zeros([size(diff_up),3]);
-                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]),'SmoothEdges',true); end
+                        %for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([length(xx_uf),length(yy_uf),length(zz_uf)]),'SmoothEdges',true); end
+                        for dm = 1:3; shifts_up(:,:,:,dm) = interp3(shifts_temp(:,:,:,dm),Xq,Yq,Zq,'makima'); end
                     else
                         shifts_up = imresize(shifts_temp,[length(xx_uf),length(yy_uf)]);
                         diff_up = imresize(diff_temp,[length(xx_uf),length(yy_uf)]);
@@ -400,9 +418,13 @@ for it = 1:iter
                 if nd == 3                
                     shifts_up = zeros([options.d1,options.d2,options.d3,3]);
                     do = size(shifts_up)./size(shifts_temp);
+                    ds = size(shifts_temp);
+                    dim = [options.d1,options.d2,options.d3];
+                    [Xq,Yq,Zq] = meshgrid(linspace((1+1/do(2))/2,ds(2)+(1-1/do(2))/2,dim(2)),linspace((1+1/do(1))/2,ds(1)+(1-1/do(1))/2,dim(1)),linspace((1+1/do(3))/2,ds(3)+(1-1/do(3))/2,dim(3)));                                       
                     if numel(shifts_temp) > 3
-                        tform = affine3d(diag([do([2,1,3])';1]));
-                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3]),'SmoothEdges',true); end
+                        for dm = 1:3; shifts_up(:,:,:,dm) = interp3(shifts_temp(:,:,:,dm),Xq,Yq,Zq,'spline'); end
+                        %tform = affine3d(diag([do([2,1,3])';1]));
+                        %for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3]),'SmoothEdges',true); end
                     else
                         for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(dm); end
                     end
