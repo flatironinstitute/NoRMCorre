@@ -128,12 +128,13 @@ init_batch = min(T,init_batch);
 perm = randperm(T,init_batch);
 switch filetype
     case 'tif'
-        Y1 = imread(Y,'Index',perm(1),'Info',tiffInfo);
-        Y_temp = zeros(sizY(1),sizY(2),init_batch,'like',Y1);
-        Y_temp(:,:,1) = Y1;
-        for tt = 2:init_batch
-            Y_temp(:,:,tt) = imread(Y,'Index',perm(tt),'Info',tiffInfo);
-        end
+%        Y1 = imread(Y,'Index',perm(1),'Info',tiffInfo);
+%         Y_temp = zeros(sizY(1),sizY(2),init_batch,'like',Y1);
+%         Y_temp(:,:,1) = Y1;
+%         for tt = 2:init_batch
+%             Y_temp(:,:,tt) = imread(Y,'Index',perm(tt),'Info',tiffInfo);
+%         end
+        Y_temp = read_file(Y,1,init_batch);
     case 'hdf5'
         Y_temp = read_file(Y,1,init_batch);        
     case 'mem'
@@ -260,10 +261,11 @@ for it = 1:iter
     for t = 1:bin_width:T
         switch filetype
             case 'tif'
-                Ytm = zeros(sizY(1),sizY(2),min(t+bin_width-1,T)-t+1,'single');
-                for tt = 1:min(t+bin_width-1,T)-t+1
-                    Ytm(:,:,tt) = single(imread(Y,'Index',t+tt-1,'Info',tiffInfo));
-                end
+%                Ytm = zeros(sizY(1),sizY(2),min(t+bin_width-1,T)-t+1,'single');
+                Ytm = single(loadtiff(Y, t, min(t+bin_width-1,T)-t+1));
+%                 for tt = 1:min(t+bin_width-1,T)-t+1
+%                     Ytm(:,:,tt) = single(imread(Y,'Index',t+tt-1,'Info',tiffInfo));
+%                 end
             case 'hdf5'
                 Ytm = single(h5read(Y,data_name,[ones(1,nd),t],[sizY(1:nd),min(t+bin_width-1,T)-t+1]));
             case 'mem'
