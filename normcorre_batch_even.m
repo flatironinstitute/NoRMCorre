@@ -247,7 +247,7 @@ for it = 1:iter
             [idx, shifts_temp, Mf_temp] = fetchNext(future_results);
             shifts(idx).shifts = shifts_temp;
             shifts(idx).shifts_up = shifts_temp;
-            Mf(otherdims{:},i) = Mf_temp;
+            Mf(otherdims{:},idx) = Mf_temp;
         end
         
         shifts_g(t:min(t+bin_width-1,T)) = shifts;
