@@ -15,6 +15,7 @@ Names = [
     'grid_size          ' % size of non-overlapping regions (default: [d1,d2,d3])
     'overlap_pre        ' % size of overlapping region (default: [32,32,16])
     'min_patch_size     ' % minimum size of patch (default: [32,32,16])    
+    'min_diff           ' % minimum difference between patches (default: [16,16,5])
     'us_fac             ' % upsampling factor for subpixel registration (default: 20)
     'mot_uf             ' % degree of patches upsampling (default: [4,4,1])
     'max_dev            ' % maximum deviation of patch shift from rigid shift (default: [3,3,1])
@@ -145,6 +146,7 @@ Values = [
     {[]}                  % size of non-overlapping regions (default: [d1,d2,d3])
     {[32,32,16]}          % size of overlapping region (default: [32,32,16])
     {[32,32,16]}          % minimum size of patch (default: [32,32,16])    
+    {[16,16,5]}           % minimum difference between patches (default: [16,16,5])
     {50}                  % upsampling factor for subpixel registration (default: 50)
     {[4,4,1]}             % degree of patches upsampling (default: [4,4,1])
     {[3,3,1]}             % maximum deviation of patch shift from rigid shift (default: [3,3,1])
@@ -202,6 +204,8 @@ if length(options.grid_size) == 1; options.grid_size = options.grid_size*ones(1,
 if length(options.grid_size) == 2; options.grid_size(3) = 1; end
 if length(options.min_patch_size) == 1; options.min_patch_size = options.min_patch_size*ones(1,3); end
 if length(options.min_patch_size) == 2; options.min_patch_size(3) = 1; end
+if length(options.min_diff) == 1; options.min_diff = options.min_diff*ones(1,3); end
+if length(options.min_diff) == 2; options.min_diff(3) = 1; end
 if length(options.overlap_pre) == 1; options.overlap_pre = options.overlap_pre*ones(1,3); end
 if length(options.overlap_pre) == 2; options.overlap_pre(3) = 1; end
 if length(options.overlap_post) == 1; options.overlap_post = options.overlap_post*ones(1,3); end
