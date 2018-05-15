@@ -47,6 +47,7 @@ Names = [
     'h5_groupname       ' % name for hdf5 dataset (default: 'mov')
     'h5_filename        ' % name for hdf5 saved file (default: 'motion_corrected.h5')
     'tiff_filename      ' % name for saved tiff stack (default: 'motion_corrected.tif')
+    'output_filename    ' % name for saved file will be used if `h5_,tiff_filename` are not specified
     % use windowing
     'use_windowing      ' % flag for windowing data before fft (default: false)
     'window_length      ' % length of window on each side of the signal as a fraction of signal length
@@ -178,6 +179,7 @@ Values = [
     {'mov'}
     {'motion_corrected.h5'}
     {'motion_corrected.tif'}
+    {''}
     % use_windowing
     {false}
     {0.5}
@@ -194,6 +196,18 @@ for j = 1:m
     if eval(['isempty(options.' Names(j,:) ')'])
         eval(['options.' Names(j,:) '= Values{j};']);
     end
+end
+
+if ~isempty(options.output_filename)
+    out_type = options.output_type;
+    [filepath,name,~] = fileparts(options.output_filename);
+    output_filename = fullfile(filepath,name);
+    if strcmpi(options.h5_filename,'motion_corrected.h5') && (strcmpi(out_type,'h5') || strcmpi(out_type,'hdf5'))
+        options.h5_filename = [output_filename,'.h5'];
+    end
+    if strcmpi(options.tiff_filename,'motion_corrected.tif') && (strcmpi(out_type,'tif') || strcmpi(out_type,'tiff'))
+        options.tiff_filename = [output_filename,'.tif'];
+    end    
 end
 
 if isempty(options.d1); options.d1 = input('What is the total number of rows? \n'); end
