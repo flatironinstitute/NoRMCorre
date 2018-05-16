@@ -19,7 +19,7 @@ if nargin < 4 || isempty(td1); td1 = 0; end
 if isa(Y,'char')
     [~,~,ext] = fileparts(Y);
     ext = ext(2:end);
-    if strcmpi(ext,'tif') || strcmpi(ext,'tiff');
+    if strcmpi(ext,'tif') || strcmpi(ext,'tiff')
         tiffInfo = imfinfo(Y);
         sizY = [tiffInfo(1).Height,tiffInfo(1).Width,length(tiffInfo)];
         filetype = 'tif';
@@ -30,7 +30,7 @@ if isa(Y,'char')
         sizY = size(Y,'Y');
         details = whos(Y,'Y');
         data_type = details.class;
-    elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5');
+    elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5')
         filetype = 'hdf5';
         fileinfo = hdf5info(Y);
         data_name = fileinfo.GroupHierarchy.Datasets.Name;
@@ -87,7 +87,7 @@ end
 d1 = sizY(1); d2 = sizY(2);
 if nd == 2; d3 = 1; else d3 = sizY(3); end
 
-if strcmpi(options.shifts_method,'fft');
+if strcmpi(options.shifts_method,'fft')
     % precompute some quantities that are used repetitively for template matching and applying shifts
 
     [xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf] = construct_grid(options.grid_size,options.mot_uf,options.d1,options.d2,options.d3,options.min_patch_size);
@@ -187,10 +187,11 @@ bin_width = min([options.mem_batch_size,T,ceil((512^2*3000)/(d1*d2*d3))]);
 for t = 1:bin_width:T
     switch filetype
         case 'tif'
-            Ytm = zeros(sizY(1),sizY(2),min(t+bin_width-1,T)-t+1,'single');
-            for tt = 1:min(t+bin_width-1,T)-t+1
-                Ytm(:,:,tt) = single(imread(Y,'Index',t+tt-1,'Info',tiffInfo));
-            end
+            Ytm = single(read_file(Y, t, min(t+bin_width-1,T)-t+1, [], tiffInfo));
+%             Ytm = zeros(sizY(1),sizY(2),min(t+bin_width-1,T)-t+1,'single');
+%             for tt = 1:min(t+bin_width-1,T)-t+1
+%                 Ytm(:,:,tt) = single(imread(Y,'Index',t+tt-1,'Info',tiffInfo));
+%             end
         case 'hdf5'
             Ytm = single(h5read(Y,data_name,[ones(1,length(sizY)-1),t],[sizY(1:end-1),min(t+bin_width-1,T)-t+1]));
         case 'mem'

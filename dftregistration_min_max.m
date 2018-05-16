@@ -231,6 +231,14 @@ out=kernr*in*kernc;
 return
 
 
+% function imFTout = FTpad2(imFT,outsize)
+%     
+%     Nin = size(imFT);
+%     cen = ceil(Nin/2);
+%     imFTout = [kron([1,0;0,0],imFT(1:cen(1),1:cen(2))), kron([0,1;0,0],imFT(1:cen(1),cen(2)+1:Nin(2))); ...
+%                 kron([0,0;1,0],imFT(cen(1)+1:Nin(1),1:cen(2))), kron([0,0;0,1],imFT(cen(1)+1:Nin(1),cen(2)+1:Nin(2)))]*4;
+% return
+
 function [ imFTout ] = FTpad(imFT,outsize)
 % imFTout = FTpad(imFT,outsize)
 % Pads or crops the Fourier transform to the desired ouput size. Taking 

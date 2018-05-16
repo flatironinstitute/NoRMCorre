@@ -23,7 +23,7 @@ nd = 2 + (options.d3 > 1); %max(length(sizY)-1,2);                    % determin
 if isa(Y,'char')
     [~,~,ext] = fileparts(Y);
     ext = ext(2:end);
-    if strcmpi(ext,'tif') || strcmpi(ext,'tiff');
+    if strcmpi(ext,'tif') || strcmpi(ext,'tiff')
         tiffInfo = imfinfo(Y);
         filetype = 'tif';
         T = length(tiffInfo);
@@ -40,12 +40,12 @@ if isa(Y,'char')
         [~,var_ind] = max(var_sizes);
         var_name = details(var_ind).name;
         sizY = size(Y,var_name);
-    elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5');
+    elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5')
         filetype = 'hdf5';
         fileinfo = hdf5info(Y);
         sizY = fileinfo.GroupHierarchy.Datasets.Dims;
     end    
-elseif isobject(Y);
+elseif isobject(Y)
     filetype = 'mem';
     var_name = 'Y';
     sizY = size(Y,var_name);
@@ -64,7 +64,7 @@ sizY = sizY(1:nd);
 
 %% set default parameters if not present
 
-if ~exist('options','var') || isempty(options);    
+if ~exist('options','var') || isempty(options)    
     options = NoRMCorreSetParms('d1',sizY(1),'d2',sizY(2));
     if nd > 2; options.d3 = sizY(3); end
 end
@@ -121,24 +121,20 @@ if col_shift
     end
 end
 %% read initial batch and compute template
-perm = randperm(T,init_batch);
-if exist('template','var');
+init_batch = min(T,init_batch);
+interval = ceil(T/2-init_batch/2+1):floor(T/2+init_batch/2);
+if exist('template','var')
     init_batch = min(init_batch,1);
 end
 switch filetype
     case 'tif'
-        Y1 = imread(Y,'Index',1,'Info',tiffInfo);
-        Y_temp = zeros(sizY(1),sizY(2),init_batch,'like',Y1);
-        Y_temp(:,:,1) = Y1;
-        for tt = 1:init_batch
-            Y_temp(:,:,tt) = imread(Y,'Index',perm(tt),'Info',tiffInfo);
-        end
+        Y_temp = read_file(Y,interval(1),init_batch,[],tiffInfo);
     case 'hdf5'
-        Y_temp = bigread2(Y,1,init_batch);        
+        Y_temp = read_file(Y,interval(1),init_batch);        
     case 'mem'
-        if nd == 2; Y_temp = Y.(var_name)(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.(var_name)(:,:,:,1:init_batch); end
+        if nd == 2; Y_temp = Y.(var_name)(:,:,interval); elseif nd == 3; Y_temp = Y.(var_name)(:,:,:,interval); end
     case 'mat'
-        if nd == 2; Y_temp = Y(:,:,perm); elseif nd == 3; Y_temp = Y(:,:,:,perm); end
+        if nd == 2; Y_temp = Y(:,:,interval); elseif nd == 3; Y_temp = Y(:,:,:,interval); end
 end
 
 data_type = class(Y_temp);
@@ -148,11 +144,11 @@ if nargin < 3 || isempty(template)
     fprintf('Registering the first %i frames just to obtain a good template....',init_batch);
     template_in = median(Y_temp,nd+1)+add_value;
     fftTemp = fftn(template_in);
-    for t = 1:size(Y_temp,nd+1);        
-        if nd == 2; 
+    for t = 1:size(Y_temp,nd+1)
+        if nd == 2
             [~,Greg] = dftregistration_min_max(fftTemp,fftn(Y_temp(:,:,t)),us_fac,-max_shift,max_shift,options.phase_flag);
         end
-        if nd == 3; 
+        if nd == 3
             [~,Greg] = dftregistration_min_max_3d(fftTemp,fftn(Y_temp(:,:,:,t)),us_fac,-max_shift,max_shift,options.phase_flag); 
         end
         M_temp = real(ifftn(Greg));

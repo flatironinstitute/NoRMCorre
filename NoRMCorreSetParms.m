@@ -15,6 +15,7 @@ Names = [
     'grid_size          ' % size of non-overlapping regions (default: [d1,d2,d3])
     'overlap_pre        ' % size of overlapping region (default: [32,32,16])
     'min_patch_size     ' % minimum size of patch (default: [32,32,16])    
+    'min_diff           ' % minimum difference between patches (default: [16,16,5])
     'us_fac             ' % upsampling factor for subpixel registration (default: 20)
     'mot_uf             ' % degree of patches upsampling (default: [4,4,1])
     'max_dev            ' % maximum deviation of patch shift from rigid shift (default: [3,3,1])
@@ -46,6 +47,7 @@ Names = [
     'h5_groupname       ' % name for hdf5 dataset (default: 'mov')
     'h5_filename        ' % name for hdf5 saved file (default: 'motion_corrected.h5')
     'tiff_filename      ' % name for saved tiff stack (default: 'motion_corrected.tif')
+    'output_filename    ' % name for saved file will be used if `h5_,tiff_filename` are not specified
     % use windowing
     'use_windowing      ' % flag for windowing data before fft (default: false)
     'window_length      ' % length of window on each side of the signal as a fraction of signal length
@@ -145,6 +147,7 @@ Values = [
     {[]}                  % size of non-overlapping regions (default: [d1,d2,d3])
     {[32,32,16]}          % size of overlapping region (default: [32,32,16])
     {[32,32,16]}          % minimum size of patch (default: [32,32,16])    
+    {[16,16,5]}           % minimum difference between patches (default: [16,16,5])
     {50}                  % upsampling factor for subpixel registration (default: 50)
     {[4,4,1]}             % degree of patches upsampling (default: [4,4,1])
     {[3,3,1]}             % maximum deviation of patch shift from rigid shift (default: [3,3,1])
@@ -176,6 +179,7 @@ Values = [
     {'mov'}
     {'motion_corrected.h5'}
     {'motion_corrected.tif'}
+    {''}
     % use_windowing
     {false}
     {0.5}
@@ -194,6 +198,18 @@ for j = 1:m
     end
 end
 
+if ~isempty(options.output_filename)
+    out_type = options.output_type;
+    [filepath,name,~] = fileparts(options.output_filename);
+    output_filename = fullfile(filepath,name);
+    if strcmpi(options.h5_filename,'motion_corrected.h5') && (strcmpi(out_type,'h5') || strcmpi(out_type,'hdf5'))
+        options.h5_filename = [output_filename,'.h5'];
+    end
+    if strcmpi(options.tiff_filename,'motion_corrected.tif') && (strcmpi(out_type,'tif') || strcmpi(out_type,'tiff'))
+        options.tiff_filename = [output_filename,'.tif'];
+    end    
+end
+
 if isempty(options.d1); options.d1 = input('What is the total number of rows? \n'); end
 if isempty(options.d2); options.d2 = input('What is the total number of columns? \n'); end
 %if options.d3 == 1; nd = 2; else nd = 3; end
@@ -202,6 +218,8 @@ if length(options.grid_size) == 1; options.grid_size = options.grid_size*ones(1,
 if length(options.grid_size) == 2; options.grid_size(3) = 1; end
 if length(options.min_patch_size) == 1; options.min_patch_size = options.min_patch_size*ones(1,3); end
 if length(options.min_patch_size) == 2; options.min_patch_size(3) = 1; end
+if length(options.min_diff) == 1; options.min_diff = options.min_diff*ones(1,3); end
+if length(options.min_diff) == 2; options.min_diff(3) = 1; end
 if length(options.overlap_pre) == 1; options.overlap_pre = options.overlap_pre*ones(1,3); end
 if length(options.overlap_pre) == 2; options.overlap_pre(3) = 1; end
 if length(options.overlap_post) == 1; options.overlap_post = options.overlap_post*ones(1,3); end
