@@ -118,6 +118,7 @@ if strcmpi(options.shifts_method,'fft')
     end
     if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
     shift_fun = @(yfft,shfts,ph,nr,nc,np) shift_reconstruct(yfft,shfts,ph,options.us_fac,nr,nc,np,options.boundary,0);
+    Xq = []; Yq = []; Zq = [];
 else
     if nd == 3
         dim = [d1,d2,d3];
