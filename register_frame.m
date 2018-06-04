@@ -15,8 +15,8 @@ if N_patches > 1
     if nd == 3; out_rig = dftregistration_min_max_3d(fftTempMat,fftn(Yt),options.us_fac,-options.max_shift,options.max_shift,options.phase_flag); lb = out_rig(3:5); ub = out_rig(3:5); end
     max_dev = options.max_dev;
 else
-    lb = -max_shift(1,nd);
-    ub = max_shift(1,nd);
+    lb = -options.max_shift(1,nd);
+    ub = options.max_shift(1,nd);
     max_dev = 0*options.max_dev;
 end
 

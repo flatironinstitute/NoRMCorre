@@ -230,6 +230,14 @@ kernr=exp((-1i*2*pi/(nr*usfac))*( (0:nor-1).' - roff )*( ifftshift([0:nr-1]) - f
 out=kernr*in*kernc;
 return
 
+% function imFTout = FTpad(imFT,outsize)
+%     
+%     Nin = size(imFT);
+%     cen = ceil(Nin/2);
+%     rows = repmat([1:cen(1),outsize(1) - Nin(1) + cen(1) + 1:outsize(1)]',Nin(2),1);
+%     columns = repmat([1:cen(2),outsize(1) - Nin(1) + cen(1) + 1:outsize(1)],Nin(1),1);
+%     imFTout = full(sparse(rows,columns,imFT))*4;
+% return
 
 % function imFTout = FTpad2(imFT,outsize)
 %     
