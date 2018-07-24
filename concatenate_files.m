@@ -21,7 +21,7 @@ end
 numFiles = length(files);
 ln = zeros(numFiles,1);
 
-Y1 = read_file(files(1).name);
+Y1 = read_file(fullfile(files(1).folder, files(1).name));
 sizY = size(Y1);
 T1 = sizY(end);
 data_type = class(Y1);
@@ -43,7 +43,7 @@ switch lower(output_type)
 end   
 
 for i = 1:numFiles
-    Y_temp = read_file(files(i).name); %cat(nd+1,Ycon,Y_temp);
+    Y_temp = read_file(fullfile(files(i).folder, files(i).name)); %cat(nd+1,Ycon,Y_temp);
     ln(i) = size(Y_temp,ndims(Y_temp));
     
     switch lower(output_type)
