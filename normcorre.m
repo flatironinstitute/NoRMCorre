@@ -416,9 +416,16 @@ for it = 1:iter
                     do = size(shifts_up)./size(shifts_temp);
                     ds = size(shifts_temp);
                     dim = [options.d1,options.d2,options.d3];
-                    [Xq,Yq,Zq] = meshgrid(linspace((1+1/do(2))/2,ds(2)+(1-1/do(2))/2,dim(2)),linspace((1+1/do(1))/2,ds(1)+(1-1/do(1))/2,dim(1)),linspace((1+1/do(3))/2,ds(3)+(1-1/do(3))/2,dim(3)));                                       
+                    if (0)
+                        [Xq,Yq,Zq] = meshgrid(linspace(1,ds(2),dim(2)),linspace(1,ds(1),dim(1)),linspace(1,ds(3),dim(3)));
+                    else
+                        [Xq,Yq,Zq] = meshgrid(linspace((1+1/do(2))/2,ds(2)+(1-1/do(2))/2,dim(2)),linspace((1+1/do(1))/2,ds(1)+(1-1/do(1))/2,dim(1)),linspace((1+1/do(3))/2,ds(3)+(1-1/do(3))/2,dim(3)));
+                        Xq(Xq<1)=1; Xq(Xq>dim(2))=dim(2);
+                        Yq(Yq<1)=1; Yq(Yq>dim(1))=dim(1);
+                        Zq(Zq<1)=1; Zq(Zq>dim(3))=dim(3);
+                    end
                     if numel(shifts_temp) > 3
-                        for dm = 1:3; shifts_up(:,:,:,dm) = interp3(shifts_temp(:,:,:,dm),Xq,Yq,Zq,'spline'); end
+                        for dm = 1:3; shifts_up(:,:,:,dm) = interp3(shifts_temp(:,:,:,dm),Xq,Yq,Zq,'makima'); end
                         %tform = affine3d(diag([do([2,1,3])';1]));
                         %for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3]),'SmoothEdges',true); end
                     else
