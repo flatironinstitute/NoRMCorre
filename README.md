@@ -36,7 +36,7 @@ The ```options``` struct can be set either manually or by using the function ```
 | Parameter name | Description |
 |----------------|-------------|
 | ```d1,d2,d3``` | dimensions of field of view |
-| ```grid_size``` | size of non-overlapping portion of the grid in each direction (x-y-z)|
+| ```grid_size``` | size of non-overlapping portion of each patch the grid in each direction (x-y-z)|
 | ```overlap_pre```| size of overlapping region in each direction before upsampling  |
 | ```mot_uf```    | upsampling factor for smoothing and refinement of motion field |
 | ```overlap_post ``` | size of overlapping region in each direction after upsampling |
