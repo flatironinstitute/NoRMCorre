@@ -19,7 +19,7 @@ if nargin < 4 || isempty(td1); td1 = 0; end
 if isa(Y,'char')
     [~,~,ext] = fileparts(Y);
     ext = ext(2:end);
-    if strcmpi(ext,'tif') || strcmpi(ext,'tiff');
+    if strcmpi(ext,'tif') || strcmpi(ext,'tiff')
         tiffInfo = imfinfo(Y);
         sizY = [tiffInfo(1).Height,tiffInfo(1).Width,length(tiffInfo)];
         filetype = 'tif';
@@ -30,7 +30,7 @@ if isa(Y,'char')
         sizY = size(Y,'Y');
         details = whos(Y,'Y');
         data_type = details.class;
-    elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5');
+    elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5')
         filetype = 'hdf5';
         fileinfo = hdf5info(Y);
         data_name = fileinfo.GroupHierarchy.Datasets.Name;
@@ -87,7 +87,7 @@ end
 d1 = sizY(1); d2 = sizY(2);
 if nd == 2; d3 = 1; else d3 = sizY(3); end
 
-if strcmpi(options.shifts_method,'fft');
+if strcmpi(options.shifts_method,'fft')
     % precompute some quantities that are used repetitively for template matching and applying shifts
 
     [xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf] = construct_grid(options.grid_size,options.mot_uf,options.d1,options.d2,options.d3,options.min_patch_size);
@@ -118,6 +118,17 @@ if strcmpi(options.shifts_method,'fft');
     end
     if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
     shift_fun = @(yfft,shfts,ph,nr,nc,np) shift_reconstruct(yfft,shfts,ph,options.us_fac,nr,nc,np,options.boundary,0);
+    Xq = []; Yq = []; Zq = [];
+else
+    if nd == 3
+        dim = [d1,d2,d3];
+        ds = size(shifts(1).shifts);
+        do = [d1,d2,d3,1]./size(shifts(1).shifts);
+        %tform = affine3d(diag([do([2,1,3])';1]));
+        [Xq,Yq,Zq] = meshgrid(linspace((1+1/do(2))/2,ds(2)+(1-1/do(2))/2,dim(2)),linspace((1+1/do(1))/2,ds(1)+(1-1/do(1))/2,dim(1)),linspace((1+1/do(3))/2,ds(3)+(1-1/do(3))/2,dim(3)));
+    else
+        Xq = []; Yq = []; Zq = [];
+    end
 end
 
 switch lower(options.output_type)
@@ -176,10 +187,11 @@ bin_width = min([options.mem_batch_size,T,ceil((512^2*3000)/(d1*d2*d3))]);
 for t = 1:bin_width:T
     switch filetype
         case 'tif'
-            Ytm = zeros(sizY(1),sizY(2),min(t+bin_width-1,T)-t+1,'single');
-            for tt = 1:min(t+bin_width-1,T)-t+1
-                Ytm(:,:,tt) = single(imread(Y,'Index',t+tt-1,'Info',tiffInfo));
-            end
+            Ytm = single(read_file(Y, t, min(t+bin_width-1,T)-t+1, [], tiffInfo));
+%             Ytm = zeros(sizY(1),sizY(2),min(t+bin_width-1,T)-t+1,'single');
+%             for tt = 1:min(t+bin_width-1,T)-t+1
+%                 Ytm(:,:,tt) = single(imread(Y,'Index',t+tt-1,'Info',tiffInfo));
+%             end
         case 'hdf5'
             Ytm = single(h5read(Y,data_name,[ones(1,length(sizY)-1),t],[sizY(1:end-1),min(t+bin_width-1,T)-t+1]));
         case 'mem'
@@ -201,11 +213,9 @@ for t = 1:bin_width:T
     lY = length(Ytc);
     shifts_temp = shifts(t:t+lY-1);
     
-      
     switch lower(options.shifts_method)
         case 'fft'            
             parfor ii = 1:lY 
-                %shifts_temp(ii).diff(:) = 0;
                 Yc = mat2cell_ov(Ytc{ii},xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf,options.overlap_post,[d1,d2,d3]);
                 Yfft = cellfun(@(x) fftn(x),Yc,'un',0);
                 minY = min(Ytc{ii}(:));
@@ -240,10 +250,12 @@ for t = 1:bin_width:T
                 maxY = max(Ytc{ii}(:));
                 shifts_temp(ii).shifts_up = shifts_temp(ii).shifts;
                 if nd == 3                                    
-                    shifts_up = zeros([options.d1,options.d2,options.d3,3]);
+                    shifts_up = zeros([d1,d2,d3,3]);
                     if numel(shifts_temp(ii).shifts) > 3
-                        tform = affine3d(diag([options.mot_uf(:);1]));
-                        for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([options.d1,options.d2,options.d3])); end
+                        %tform = affine3d(diag([options.mot_uf(:);1]));
+                        %tform = affine3d(diag([do([2,1,3])';1]));
+                        %for dm = 1:3; shifts_up(:,:,:,dm) = imwarp(shifts_temp(ii).shifts(:,:,:,dm),tform,'OutputView',imref3d([d1,d2,d3]),'SmoothEdges',true); end
+                        for dm = 1:3; shifts_up(:,:,:,dm) = interp3(shifts_temp(ii).shifts(:,:,:,dm),Xq,Yq,Zq,'makima'); end
                     else
                         for dm = 1:3; shifts_up(:,:,:,dm) = shifts_temp(ii).shifts(:,:,:,dm); end
                     end

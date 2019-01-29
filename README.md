@@ -3,6 +3,22 @@
 # NoRMCorre: Non-Rigid Motion Correction 
 This package provides a Matlab implementation of the NoRMCorre algorithm [[1]](#ref), and can be used for online piecewise rigid motion correction of 2d (planar) or 3d (volumetric) calcium imaging data. 
 
+## Citation
+
+If you find this package useful please cite the companion paper [[1]](#ref):
+
+```
+@article{pnevmatikakis2017normcorre,
+  title={NoRMCorre: An online algorithm for piecewise rigid motion correction of calcium imaging data},
+  author={Pnevmatikakis, Eftychios A and Giovannucci, Andrea},
+  journal={Journal of neuroscience methods},
+  volume={291},
+  pages={83--94},
+  year={2017},
+  publisher={Elsevier}
+}
+```
+
 ## Synopsis
 
 The algorithm operates by splitting the field of view into a set of overlapping patches. For each patch and each frame a rigid translation is estimated by aligning the patch against a template using an efficient, FFT based, algorithm for subpixel registration [[2]](#reg). The estimated set of translations is further upsampled to a finer resolution to create a smooth motion field that is applied to a set of smaller overlapping patches. Extra care is taken to avoid smearing caused by interpolating overlapping patches with drastically different motion vectors. The registered frame is used to update the template in an online fashion by calculating a running/mean of past registered frames. The pipeline is summarized in the figure below.
@@ -20,7 +36,7 @@ The ```options``` struct can be set either manually or by using the function ```
 | Parameter name | Description |
 |----------------|-------------|
 | ```d1,d2,d3``` | dimensions of field of view |
-| ```grid_size``` | size of non-overlapping portion of the grid in each direction (x-y-z)|
+| ```grid_size``` | size of non-overlapping portion of each patch the grid in each direction (x-y-z)|
 | ```overlap_pre```| size of overlapping region in each direction before upsampling  |
 | ```mot_uf```    | upsampling factor for smoothing and refinement of motion field |
 | ```overlap_post ``` | size of overlapping region in each direction after upsampling |

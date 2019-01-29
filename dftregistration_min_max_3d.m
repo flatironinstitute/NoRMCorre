@@ -187,27 +187,31 @@ elseif usfac > 1
 
     % If its only one row or column the shift along that dimension has no
     % effect. Set to zero.
-    if nr == 1,
+    if nr == 1
         row_shift = 0;
     end
-    if nc == 1,
+    if nc == 1
         col_shift = 0;
     end
-    if np == 1,
+    if np == 1
         pln_shift = 0;
     end    
 end  
 
-rg00 = sum(abs(buf1ft(:)).^2);
-rf00 = sum(abs(buf2ft(:)).^2);
-error = 1.0 - abs(CCmax).^2/(rg00*rf00);
-error = sqrt(abs(error));
+if 0
+    rg00 = sum(abs(buf1ft(:)).^2);
+    rf00 = sum(abs(buf2ft(:)).^2);
+    error = 1.0 - abs(CCmax).^2/(rg00*rf00);
+    error = sqrt(abs(error));
+else
+    error = 0;
+end
 diffphase = angle(CCmax);
 
 output=[error,diffphase,row_shift,col_shift,pln_shift];
 
 % Compute registered version of buf2ft
-if (nargout > 1)&&(usfac > 0),
+if (nargout > 1)&&(usfac > 0)
     [Nc,Nr,Np] = meshgrid(Nc,Nr,Np);
     Greg = buf2ft.*exp(1i*2*pi*(-row_shift*Nr/nr-col_shift*Nc/nc-pln_shift*Np/np));
     Greg = Greg*exp(1i*diffphase);
@@ -295,7 +299,6 @@ Nout = outsize;
 Nin = size(imFT);
 imFT = fftshift(imFT);
 center = floor(size(imFT)/2)+1;
-
 imFTout = zeros(outsize);
 centerout = floor(size(imFTout)/2)+1;
 
@@ -306,5 +309,7 @@ cenout_cen = centerout - center;
 imFTout(max(cenout_cen(1)+1,1):min(cenout_cen(1)+Nin(1),Nout(1)),max(cenout_cen(2)+1,1):min(cenout_cen(2)+Nin(2),Nout(2)),max(cenout_cen(3)+1,1):min(cenout_cen(3)+Nin(3),Nout(3))) ...
     = imFT(max(-cenout_cen(1)+1,1):min(-cenout_cen(1)+Nout(1),Nin(1)),max(-cenout_cen(2)+1,1):min(-cenout_cen(2)+Nout(2),Nin(2)),max(-cenout_cen(3)+1,1):min(-cenout_cen(3)+Nout(3),Nin(3)));
 
+%imFTout2 = padarray(imFT,cenout_cen,0,'pre');
+%imFTout = padarray(imFTout2,cenout_cen-mod(size(imFT),2),0,'post');
 imFTout = ifftshift(imFTout)*Nout(1)*Nout(2)*Nout(3)/(Nin(1)*Nin(2)*Nin(3));
 return
