@@ -37,6 +37,7 @@ Names = [
     'memmap             ' % flag for saving memory mapped motion corrected file (default: false)
     'mem_filename       ' % name for memory mapped file (default: 'motion_corrected.mat')
     'mem_batch_size     ' % batch size during memory mapping for speed (default: 5000)
+    'print_msg          ' % flag for printing progress to command line (default: true)
     % plotting
     'plot_flag          ' % flag for plotting results in real time (default: false)
     'make_avi           ' % flag for making movie (default: false)
@@ -169,6 +170,7 @@ Values = [
     {false}               % flag for saving memory mapped motion corrected file (default: false)
     {'motion_corrected.mat'} % name for memory mapped file (default: 'motion_corrected.mat')
     {1000}                % batch size used during memory mapping for faster mapping
+    {1}                   % flag for printing progress to command line (default: true)
     % plotting
     {false}               % flag for plotting results in real time (default: false)
     {false}               % flag for making movie (default: false)
