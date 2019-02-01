@@ -26,7 +26,7 @@ Names = [
     % template updating
     'upd_template       ' % flag for online template updating (default: true)
     'init_batch         ' % length of initial batch (default: 100)
-    'bin_width          ' % width of each bin (default: 10)
+    'bin_width          ' % width of each bin (default: 200)
     'buffer_width       ' % number of local means to keep in memory (default: 50)
     'method             ' % method for averaging the template (default: {'median';'mean})
     'iter               ' % number of data passes (default: 1)
@@ -159,7 +159,7 @@ Values = [
     % template updating
     {true}                % flag for online template updating (default: true)
     {100}                 % length of initial batch (default: 100)
-    {50}                  % width of each bin (default: 10)
+    {200}                  % width of each bin (default: 200)
     {50}                  % number of local means to keep in memory (default: 50)
     {{'median';'mean'}}   % method for averaging the template (default: {'median';'mean'}
     {1}                   % number of data passes (default: 1)
