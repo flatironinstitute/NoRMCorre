@@ -87,7 +87,7 @@ end
 d1 = sizY(1); d2 = sizY(2);
 if nd == 2; d3 = 1; else d3 = sizY(3); end
 
-if ~isfield(options, 'print_msg') || isempty(options, 'print_msg')
+if ~isfield(options, 'print_msg') || isempty(options.print_msg)
     print_msg = true;
 else
     print_msg = options.print_msg;
