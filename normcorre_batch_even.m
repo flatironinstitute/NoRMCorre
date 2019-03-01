@@ -103,6 +103,8 @@ if strcmpi(options.boundary,'nan')
 else
     fill_value = add_value;
 end
+print_msg = options.print_msg;
+
 
 while mod(T,bin_width) == 1
     if T == 1
@@ -122,10 +124,10 @@ else
 end 
 options.col_shift = col_shift;
 if col_shift 
-    fprintf('Offset %1.1d pixels due to bidirectional scanning detected. \n',col_shift); 
+    if print_msg; fprintf('Offset %1.1d pixels due to bidirectional scanning detected. \n',col_shift); end
     if strcmpi(options.shifts_method,'fft')
         options.shifts_method = 'cubic';
-        fprintf('Cubic shifts will be applied. \n'); 
+        if print_msg; fprintf('Cubic shifts will be applied. \n'); end
     end
 end
 %% read initial batch and compute template
@@ -150,7 +152,7 @@ data_type = class(Y_temp);
 Y_temp = single(Y_temp);
 use_proj = true;
 if nargin < 3 || isempty(template)
-    fprintf('Registering the first %i frames just to obtain a good template....',init_batch);
+    if print_msg; fprintf('Registering the first %i frames just to obtain a good template....',init_batch); end
     template_in = median(Y_temp,nd+1)+add_value;
     fftTemp = fftn(template_in);
     for t = 1:size(Y_temp,nd+1)        
@@ -164,7 +166,7 @@ if nargin < 3 || isempty(template)
         template_in = template_in*(t-1)/t + M_temp/t;
     end
     template_in = template_in + add_value;
-    fprintf('..done. \n')
+    if print_msg; fprintf('..done. \n'); end
 else
     template_in = single(template + add_value);
 end
@@ -224,7 +226,7 @@ switch lower(options.output_type)
 end   
 
 cnt_buf = 0;
-fprintf('Template initialization complete.  Now registering all the frames with new template. \n')
+if print_msg; fprintf('Template initialization complete.  Now registering all the frames with new template. \n'); end
 %%
 
 prevstr = [];
@@ -286,10 +288,11 @@ for it = 1:iter
                     end
             end        
         end
-        
-        str=[num2str(t+lY-1), ' out of ', num2str(T), ' frames registered, iteration ', num2str(it), ' out of ', num2str(iter), '..'];
-        refreshdisp(str, prevstr, t);
-        prevstr=str; 
+        if print_msg
+            str = sprintf('%d out of %d frames registered, iteration %d out of %d..', num2str(t+lY-1), num2str(T), num2str(it), num2str(iter));
+            refreshdisp(str, prevstr, t);
+            prevstr=str; 
+        end
         % update template
         if upd_template
             cnt_buf = cnt_buf + 1;                 
@@ -323,4 +326,5 @@ for it = 1:iter
         M_final.template = template;
     end
 end
+if print_msg; fprintf('\n'); end
 maxNumCompThreads('automatic');

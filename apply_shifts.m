@@ -87,6 +87,12 @@ end
 d1 = sizY(1); d2 = sizY(2);
 if nd == 2; d3 = 1; else d3 = sizY(3); end
 
+if ~isfield(options, 'print_msg') || isempty(options.print_msg)
+    print_msg = true;
+else
+    print_msg = options.print_msg;
+end
+
 if strcmpi(options.shifts_method,'fft')
     % precompute some quantities that are used repetitively for template matching and applying shifts
 
@@ -179,10 +185,11 @@ end
 if col_shift
     if strcmpi(options.shifts_method,'fft')
         options.shifts_method = 'cubic';
-        fprintf('Offset %1.1f pixels due to bidirectional scanning detected. Cubic shifts will be applied. \n',col_shift); 
+        if print_msg; fprintf('Offset %1.1f pixels due to bidirectional scanning detected. Cubic shifts will be applied. \n',col_shift); end
     end
 end
 
+if print_msg; prevstr = []; end
 bin_width = min([options.mem_batch_size,T,ceil((512^2*3000)/(d1*d2*d3))]);
 for t = 1:bin_width:T
     switch filetype
@@ -287,6 +294,13 @@ for t = 1:bin_width:T
             if nd == 3; h5write(options.h5_filename,['/',options.h5_groupname],Mf,[ones(1,nd),t],[sizY(1:nd),rem_mem]); end
         case {'tif','tiff'}
             saveastiff(cast(Mf,data_type),options.tiff_filename,opts_tiff);
-    end           
-    fprintf('%i out of %i frames registered \n',t+lY-1,T)
+    end
+    
+    if print_msg
+        str = sprintf('%i out of %i frames registered \n',t+lY-1,T);
+        refreshdisp(str, prevstr, t);
+        prevstr=str;
+    end
 end
+
+if print_msg; fprintf('\n'); end
