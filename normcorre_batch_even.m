@@ -289,7 +289,7 @@ for it = 1:iter
             end        
         end
         if print_msg
-            str = sprintf('%d out of %d frames registered, iteration %d out of %d..', num2str(t+lY-1), num2str(T), num2str(it), num2str(iter));
+            str = sprintf('%d out of %d frames registered, iteration %d out of %d..', t+lY-1, T, it, iter);
             refreshdisp(str, prevstr, t);
             prevstr=str; 
         end
