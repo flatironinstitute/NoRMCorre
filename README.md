@@ -83,7 +83,8 @@ Eftychios A. Pnevmatikakis and Andrea Giovannucci, *NoRMCorre: An online algorit
 
 ## Acknowledgements
 
-Example dataset is kindly provided from Andrea Giovannucci, taken at Wang lab (Princeton University).
+The 2p example dataset is kindly provided from Andrea Giovannucci, taken at Wang lab (Princeton University).
+The 1p example dataset is kindly provided by Daniel Aharoni and Peyman Golshani (UCLA, [Miniscope project](http://miniscope.org)).
 
 ## References 
 
