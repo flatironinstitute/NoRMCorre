@@ -1,12 +1,18 @@
 % demo file for applying the NoRMCorre motion correction algorithm on 
 % 1-photon widefield imaging data using low memory (good for long datasets)
-% Example files can be obtained through the miniscope project page
+% Example file is provided from the miniscope project page
 % www.miniscope.org
 
 clear;
 gcp;
 %% read data and convert to double
-name = '/Users/epnevmatikakis/Documents/Ca_datasets/Miniscope/msCam13.avi';
+name = 'msCam13.avi';
+if ~exist(name,'file')  % download file if it doesn't exist in the directory
+    url = 'https://caiman.flatironinstitute.org/~neuro/normcorre_datasets/msCam13.avi';
+    fprintf('downloading the file...');
+    outfilename = websave(name,url);
+    fprintf('done.');
+end
 frame = read_file(name,1,1);
 [d1,d2] = size(frame);
 
@@ -16,7 +22,7 @@ frame = read_file(name,1,1);
 % h5 file.
 
 gSig = 7; 
-gSiz = 17; 
+gSiz = 3*gSig; 
 psf = fspecial('gaussian', round(2*gSiz), gSig);
 ind_nonzero = (psf(:)>=max(psf(:,1)));
 psf = psf-mean(psf(ind_nonzero));
