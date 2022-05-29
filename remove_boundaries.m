@@ -18,6 +18,17 @@ if strcmpi(method,'nan');
     add_value = NaN;
 end
 
+% Make sure shifts are not larger than size of image/patch (to prevent
+% crashes, and issue a warning if shifts are too large. 
+if abs( shifts(1) ) >= sz(1)
+    shifts(1) = sign(shifts(1)) * (sz(1)-1);
+    warning('Detected y-shifts are larger than height of patches. Consider inceasing the height of patches!')
+end
+if abs( shifts(2) ) >= sz(2)
+    shifts(2) = sign(shifts(2)) * (sz(2)-1);
+    warning('Detected x-shifts are larger than width of patches. Consider inceasing the width of patches!')
+end
+
 switch lower(method)
     case 'zero'
         if shifts(1); X((1:abs(shifts(1)))*sign(shifts(1)) + (sz(1)+1)*(shifts(1)<0),:,:) = add_value; end
